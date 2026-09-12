@@ -530,6 +530,7 @@ function TreatmentBayImmersionLayer({
   mobility = 'recumbent',
   patientScale = 1,
   faceAttachment = null,
+  showWallMonitor = true,
 }: {
   appliedTreatmentIds: string[];
   active: boolean;
@@ -539,6 +540,7 @@ function TreatmentBayImmersionLayer({
   mobility?: PatientMobility;
   patientScale?: number;
   faceAttachment?: THREE.Group | null;
+  showWallMonitor?: boolean;
 }) {
   const equipment = useMemo(
     () => buildTreatmentEquipmentState(appliedTreatmentIds),
@@ -685,21 +687,26 @@ function TreatmentBayImmersionLayer({
         </group>
       )}
 
-      <mesh position={[0.82, 1.37, -0.865]} raycast={() => null}>
-        <boxGeometry args={[0.34, 0.18, 0.012]} />
-        <meshStandardMaterial color="#020617" emissive="#22d3ee" emissiveIntensity={0.34} roughness={0.36} transparent opacity={0.88} />
-      </mesh>
-      {[-0.055, 0, 0.055].map((y, index) => (
-        <mesh key={`monitor-trace-${index}`} position={[0.82, 1.37 + y, -0.856]} raycast={() => null}>
-          <boxGeometry args={[0.21, 0.008, 0.006]} />
-          <meshStandardMaterial
-            color={index === 0 ? '#ef4444' : index === 1 ? '#38bdf8' : '#22c55e'}
-            emissive={index === 0 ? '#ef4444' : index === 1 ? '#38bdf8' : '#22c55e'}
-            emissiveIntensity={0.65}
-            roughness={0.3}
-          />
-        </mesh>
-      ))}
+      {/* The villa uses its portable device, not this legacy clinic fixture. */}
+      {showWallMonitor && (
+        <group name="legacy-wall-monitor">
+          <mesh position={[0.82, 1.37, -0.865]} raycast={() => null}>
+            <boxGeometry args={[0.34, 0.18, 0.012]} />
+            <meshStandardMaterial color="#020617" emissive="#22d3ee" emissiveIntensity={0.34} roughness={0.36} transparent opacity={0.88} />
+          </mesh>
+          {[-0.055, 0, 0.055].map((y, index) => (
+            <mesh key={`monitor-trace-${index}`} position={[0.82, 1.37 + y, -0.856]} raycast={() => null}>
+              <boxGeometry args={[0.21, 0.008, 0.006]} />
+              <meshStandardMaterial
+                color={index === 0 ? '#ef4444' : index === 1 ? '#38bdf8' : '#22c55e'}
+                emissive={index === 0 ? '#ef4444' : index === 1 ? '#38bdf8' : '#22c55e'}
+                emissiveIntensity={0.65}
+                roughness={0.3}
+              />
+            </mesh>
+          ))}
+        </group>
+      )}
     </group>
   );
 }
@@ -6480,6 +6487,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
 
               <TreatmentBayImmersionLayer
                 faceAttachment={faceAttachment}
+                showWallMonitor={caseData.id !== 'resp-001'}
                 appliedTreatmentIds={appliedTreatmentIds}
                 active={useTreatmentBayPresentation}
                 stage={bayStage}
