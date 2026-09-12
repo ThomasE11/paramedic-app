@@ -1,4 +1,5 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { writeFile } from 'node:fs/promises';
 import type * as THREE from 'three';
 
 test.use({ video: 'on', viewport: { width: 1440, height: 960 } });
@@ -71,6 +72,72 @@ async function cyanosis(page: Page) {
     if (!body) return null;
     const material = (Array.isArray(body.material) ? body.material[0] : body.material) as THREE.MeshStandardMaterial;
     return !!body.userData.cyanosisOpenTex && (material.map === body.userData.cyanosisOpenTex || material.map === body.userData.cyanosisClosedTex);
+  });
+}
+
+async function sampleBreathing(page: Page) {
+  return page.evaluate(async () => {
+    const clock = await import('/src/lib/breathClock.ts');
+    const scene = window.__r3f!.get().scene;
+    const body = scene.getObjectByName('Patient') as THREE.Mesh;
+    const shoulder = (scene.getObjectByName('mixamorig:LeftShoulder') ?? scene.getObjectByName('mixamorigLeftShoulder'))!;
+    const inverse = shoulder.quaternion.clone().invert();
+    const relative = shoulder.quaternion.clone();
+    const chestIndex = body.morphTargetDictionary!.breathe_chest_rise;
+    const tripodIndex = body.morphTargetDictionary!.pose_tripod;
+    const gaspIndex = body.morphTargetDictionary!.motion_gasp;
+    const samples: Array<{ time: number; phase: number; rpm: number; chest: number; shoulder: number; tripod: number; gasp: number }> = [];
+    const start = performance.now();
+    await new Promise<void>(resolve => {
+      const sample = () => {
+        relative.copy(inverse).multiply(shoulder.quaternion);
+        samples.push({
+          time: performance.now() - start,
+          phase: clock.getBreathPhase01(),
+          rpm: clock.getBreathRpm(),
+          chest: body.morphTargetInfluences![chestIndex],
+          shoulder: 2 * Math.atan2(relative.z, relative.w),
+          tripod: body.morphTargetInfluences![tripodIndex],
+          gasp: body.morphTargetInfluences![gaspIndex],
+        });
+        if (performance.now() - start >= 12000) resolve();
+        else requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
+    });
+    // Measure cadence from upward crossings of the *rendered chest morph*,
+    // independently of the clock that is supposed to drive it. The untreated
+    // patient also has intentional, irregular hypoxic gasps. Measure basal RR
+    // only inside contiguous non-gasp windows; retain every raw sample and
+    // record exclusions so this cannot silently hide a general motion defect.
+    const basalSamples = samples.filter(sample => sample.gasp === 0);
+    const chestMin = Math.min(...basalSamples.map(sample => sample.chest));
+    const chestMax = Math.max(...basalSamples.map(sample => sample.chest));
+    const threshold = (chestMin + chestMax) / 2;
+    const crossings: Array<{ time: number; segment: number }> = [];
+    let segment = 0;
+    for (let i = 1; i < samples.length; i++) {
+      const before = samples[i - 1], after = samples[i];
+      if (before.gasp > 0 || after.gasp > 0) { segment++; continue; }
+      if (before.chest < threshold && after.chest >= threshold) {
+        crossings.push({ time: before.time + (after.time - before.time) * (threshold - before.chest) / (after.chest - before.chest), segment });
+      }
+    }
+    const periods = crossings.slice(1).flatMap((crossing, i) => crossing.segment === crossings[i].segment ? [crossing.time - crossings[i].time] : []);
+    const span = (key: 'chest' | 'shoulder') => Math.max(...samples.map(sample => sample[key])) - Math.min(...samples.map(sample => sample[key]));
+    return {
+      sampledRpm: periods.length ? periods.length * 60000 / periods.reduce((sum, period) => sum + period, 0) : null,
+      chestCrossings: crossings.length,
+      basalPeriods: periods.length,
+      gaspSampleFraction: 1 - basalSamples.length / samples.length,
+      lateGaspSamples: samples.filter(sample => sample.time >= 1000 && sample.gasp > 0).length,
+      clockRpm: samples.at(-1)!.rpm,
+      shoulderZExcursion: span('shoulder'),
+      chestExcursion: chestMax - chestMin,
+      totalChestExcursion: span('chest'),
+      tripod: samples.at(-1)!.tripod,
+      samples,
+    };
   });
 }
 
@@ -166,6 +233,17 @@ test('deliberate measurements and respiratory care change the same patient', asy
   await page.clock.fastForward(10_000);
   await expect(saturation).not.toContainText('--');
   await expect(monitor.getByRole('button', { name: 'Measure blood glucose', exact: true })).toContainText('--');
+  const untreatedBreathing = await sampleBreathing(page);
+  await writeFile(info.outputPath('untreated-breathing.json'), JSON.stringify(untreatedBreathing));
+  expect(untreatedBreathing.chestCrossings).toBeGreaterThanOrEqual(2);
+  expect(untreatedBreathing.basalPeriods).toBeGreaterThanOrEqual(2);
+  expect(untreatedBreathing.gaspSampleFraction).toBeLessThan(.25);
+  expect(untreatedBreathing.sampledRpm).toBeCloseTo(32, 0);
+  expect(untreatedBreathing.clockRpm).toBe(32);
+  expect(untreatedBreathing.chestExcursion).toBeGreaterThan(.08);
+  expect(untreatedBreathing.shoulderZExcursion).toBeGreaterThan(.004);
+  expect(untreatedBreathing.tripod).toBeGreaterThan(.99);
+  await page.screenshot({ path: info.outputPath('breathing-before-care.png') });
   await page.getByRole('tab', { name: 'Treat', exact: true }).click();
   await page.getByRole('button', { name: 'Select Non-rebreather', exact: true }).click();
   const oxygen = page.getByRole('dialog', { name: /Apply non-rebreather mask/i });
@@ -178,6 +256,18 @@ test('deliberate measurements and respiratory care change the same patient', asy
   await expect.poll(() => cyanosis(page)).toBe(false);
   await expect(page.locator('[data-applied-equipment="nonrebreather"]')).toBeVisible();
   await expect(monitor.getByText('RR 28', { exact: true })).toBeVisible();
+  const oxygenBreathing = await sampleBreathing(page);
+  await writeFile(info.outputPath('oxygen-breathing.json'), JSON.stringify(oxygenBreathing));
+  // Saturation improvement alone must not erase visible work of breathing.
+  expect(oxygenBreathing.chestCrossings).toBeGreaterThanOrEqual(2);
+  expect(oxygenBreathing.basalPeriods).toBeGreaterThanOrEqual(2);
+  expect(oxygenBreathing.gaspSampleFraction).toBeLessThan(.25);
+  expect(oxygenBreathing.clockRpm).toBe(28);
+  expect(oxygenBreathing.sampledRpm).toBeCloseTo(28, 0);
+  // The lower RR can modestly reduce the shrug, but accessory effort remains
+  // active (the current RR32→28 calibration retains about 80% of excursion).
+  expect(oxygenBreathing.shoulderZExcursion).toBeGreaterThan(untreatedBreathing.shoulderZExcursion * .75);
+  expect(oxygenBreathing.tripod).toBeGreaterThan(.99);
   await verifyFittedMask(page, info, 'nonrebreather');
   await page.getByRole('button', { name: 'Select Nebuliser Mask', exact: true }).click();
   const nebuliser = page.getByRole('dialog', { name: 'Apply nebuliser mask', exact: true });
@@ -187,6 +277,22 @@ test('deliberate measurements and respiratory care change the same patient', asy
   await nebuliser.getByRole('button', { name: 'Aerosol flowing — reassess wheeze', exact: true }).click();
   await page.clock.fastForward(15_000);
   await expect(monitor.getByText('RR 14', { exact: true })).toBeVisible();
+  const treatedBreathing = await sampleBreathing(page);
+  const breathingEvidence = { untreated: untreatedBreathing, oxygen: oxygenBreathing, treated: treatedBreathing };
+  const breathingEvidencePath = info.outputPath('rendered-breathing-response.json');
+  await writeFile(breathingEvidencePath, JSON.stringify(breathingEvidence));
+  await info.attach('rendered-breathing-response', { path: breathingEvidencePath, contentType: 'application/json' });
+  expect(treatedBreathing.chestCrossings).toBeGreaterThanOrEqual(2);
+  // An already-started gasp may finish its authored 0.8s pulse; it must not
+  // restart once the live respiratory effort and oxygenation have recovered.
+  expect(treatedBreathing.lateGaspSamples).toBe(0);
+  expect(treatedBreathing.sampledRpm).toBeCloseTo(14, 0);
+  expect(treatedBreathing.clockRpm).toBe(14);
+  expect(treatedBreathing.shoulderZExcursion).toBeLessThan(oxygenBreathing.shoulderZExcursion * .4);
+  // Restored depth is not the same as reduced effort: shallow breaths become
+  // fuller while cadence and accessory recruitment fall. Do not flatten them.
+  expect(treatedBreathing.chestExcursion).toBeGreaterThan(oxygenBreathing.chestExcursion * 1.5);
+  expect(treatedBreathing.tripod).toBeGreaterThan(.99);
   await expect(page.locator('[data-applied-equipment="nonrebreather"]')).toHaveCount(0);
   await expect(page.locator('[data-applied-equipment="nebulizer"]')).toBeVisible();
   await verifyFittedMask(page, info, 'nebulizer');
