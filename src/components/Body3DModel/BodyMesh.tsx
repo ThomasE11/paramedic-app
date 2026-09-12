@@ -36,6 +36,7 @@ import { getBreathPhase01, setBreathClock } from '@/lib/breathClock';
 import { computeIdleLimbMotion, createIdleLimbMotion } from '@/lib/idleLimbMotion';
 import { patientWalkingPath } from '@/lib/patientWalkingPath';
 import { tripodHandBraceSweep, TRIPOD_BRACE_CALIBRATION } from '@/lib/tripodHandBrace';
+import { skinDetailProfileForPilot, type SkinDetailProfile } from './resp001SkinDetail';
 import {
   patientSkeletalAction,
   patientArmRestRadians,
@@ -469,28 +470,33 @@ function pupilScale(mm: number): number {
 interface SssMaps {
   thickness: THREE.Texture;
   detail: THREE.Texture;
+  detailTiles: number;
+  detailScale: number;
 }
-let sssMapsPromise: Promise<SssMaps | null> | null = null;
-function loadSssMaps(): Promise<SssMaps | null> {
-  if (sssMapsPromise) return sssMapsPromise;
-  sssMapsPromise = (async () => {
+const sssMapsPromises = new Map<string, Promise<SssMaps | null>>();
+function loadSssMaps(profile?: SkinDetailProfile): Promise<SssMaps | null> {
+  const detailUrl = profile?.url ?? '/models/patient-male-skin-detail-normal.png';
+  const cached = sssMapsPromises.get(detailUrl);
+  if (cached) return cached;
+  const pending = (async () => {
     const loader = new THREE.TextureLoader();
     const load = (url: string) =>
       new Promise<THREE.Texture>((resolve, reject) => loader.load(url, resolve, undefined, reject));
     try {
       const [thickness, detail] = await Promise.all([
         load('/models/patient-male-skin-thickness.png'),
-        load('/models/patient-male-skin-detail-normal.png'),
+        load(detailUrl),
       ]);
       thickness.flipY = false; // GLB UV convention
       detail.flipY = false;
       detail.wrapS = detail.wrapT = THREE.RepeatWrapping;
-      return { thickness, detail };
+      return { thickness, detail, detailTiles: profile?.tiles ?? DETAIL_TILES, detailScale: profile?.scale ?? 0.6 };
     } catch {
       return null; // maps missing → material stays plain PBR
     }
   })();
-  return sssMapsPromise;
+  sssMapsPromises.set(detailUrl, pending);
+  return pending;
 }
 
 // Pore detail-normal blend: three has no second-normal slot, so inject a
@@ -505,12 +511,13 @@ function loadSssMaps(): Promise<SssMaps | null> {
 // the material has a diffuse map) and vViewPosition. Injected after
 // normal_fragment_begin so `normal` and `vViewPosition` are in scope.
 const DETAIL_TILES = 12;
-function injectDetailNormal(mat: THREE.MeshPhysicalMaterial, detail: THREE.Texture): void {
+function injectDetailNormal(mat: THREE.MeshPhysicalMaterial, maps: SssMaps): void {
   mat.userData.detailNormalInjected = true;
+  mat.userData.detailNormalProfile = `${maps.detail.uuid}:${maps.detailTiles}:${maps.detailScale}`;
   mat.onBeforeCompile = (shader) => {
-    shader.uniforms.detailNormalMap = { value: detail };
-    shader.uniforms.detailNormalTiles = { value: DETAIL_TILES };
-    shader.uniforms.detailNormalScale = { value: 0.6 };
+    shader.uniforms.detailNormalMap = { value: maps.detail };
+    shader.uniforms.detailNormalTiles = { value: maps.detailTiles };
+    shader.uniforms.detailNormalScale = { value: maps.detailScale };
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <normal_pars_fragment>',
@@ -552,7 +559,10 @@ function applySssToMaterial(mat: THREE.MeshPhysicalMaterial, maps: SssMaps, on: 
     mat.sheen = 0.4;                                   // peach-fuzz rim
     mat.sheenRoughness = 0.8;
     mat.sheenColor = new THREE.Color(0xffd9c0);
-    if (!mat.userData.detailNormalInjected) injectDetailNormal(mat, maps.detail);
+    const profileKey = `${maps.detail.uuid}:${maps.detailTiles}:${maps.detailScale}`;
+    if (!mat.userData.detailNormalInjected || mat.userData.detailNormalProfile !== profileKey) {
+      injectDetailNormal(mat, maps);
+    }
   } else {
     mat.thickness = 0;
     mat.thicknessMap = null;
@@ -1341,7 +1351,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   useEffect(() => {
     if (!isMaleMesh) return;
     let cancelled = false;
-    loadSssMaps().then((maps) => {
+    loadSssMaps(skinDetailProfileForPilot(braceHandsOnKnees)).then((maps) => {
       if (cancelled || !maps) return;
       clonedScene.traverse((child) => {
         const mesh = child as THREE.Mesh;
@@ -1355,7 +1365,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       });
     });
     return () => { cancelled = true; };
-  }, [clonedScene, isMaleMesh, sss]);
+  }, [clonedScene, isMaleMesh, sss, braceHandsOnKnees]);
 
   // Region state is now communicated with anatomical overlays and landmarks,
   // not by recolouring the whole patient. Keep this callback for the pointer
