@@ -6359,7 +6359,9 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               <ambientLight intensity={bayVariant === 'home' ? 0.12 : 0.1} />
               <directionalLight position={[4, 8, 5]} intensity={bayVariant === 'home' ? 0.32 : 1.45} color="#fff2e6" />
               <directionalLight position={[0, 4, -5]} intensity={bayVariant === 'home' ? 0.22 : 0.95} color="#ffffff" />
-              {activeRegion === 'face' && (
+              {/* The villa already has an authored daylight/examination rig.
+                  These legacy close-range fills bleach its skin and cyanosis. */}
+              {activeRegion === 'face' && caseData.id !== 'resp-001' && (
                 <FaceEquipmentFrame frame={faceAttachment}>
                   <pointLight
                     name="pupil-exam-light"
