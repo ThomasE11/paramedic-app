@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import type * as THREE from 'three';
 
 test.use({ video: 'on', viewport: { width: 1440, height: 960 } });
@@ -74,6 +74,78 @@ async function cyanosis(page: Page) {
   });
 }
 
+async function verifyFittedMask(page: Page, info: TestInfo, mode: 'nonrebreather' | 'nebulizer') {
+  const inspect = () => page.evaluate(mode => {
+    const state = window.__r3f!.get();
+    const group = state.scene.getObjectByName(`applied-${mode}-mask`);
+    if (!group) return null;
+    group.updateWorldMatrix(true, true);
+    const shell = group.getObjectByName(`${mode}-contoured-shell`) as THREE.Mesh | undefined;
+    const exit = group.getObjectByName('pilot-mask-tube-exit');
+    const face = state.scene.getObjectByName('PatientFaceAttachment');
+    if (!shell || !exit || !face) return null;
+    const expectedExit = state.camera.position.clone().set(...(mode === 'nonrebreather'
+      ? [0.0847, 1.5306, 0.045] as const : [0.0684, 1.4495, 0.045] as const));
+    face.localToWorld(expectedExit);
+    shell.geometry.computeBoundingBox();
+    const bounds = shell.geometry.boundingBox!;
+    const planeNames: string[] = [];
+    group.traverse(object => {
+      if ((object as THREE.Mesh).geometry?.type === 'PlaneGeometry') planeNames.push(object.name);
+    });
+    return {
+      planes: planeNames,
+      depth: bounds.max.z - bounds.min.z,
+      attachmentError: exit.getWorldPosition(state.camera.position.clone()).distanceTo(expectedExit),
+      accessory: !!group.getObjectByName(mode === 'nonrebreather' ? 'nonrebreather-reservoir' : 'nebulizer-medication-cup'),
+      cupWallVertices: mode === 'nebulizer'
+        ? ((group.getObjectByName('nebulizer-medication-cup')?.children[0] as THREE.Mesh | undefined)?.geometry.getAttribute('position')?.count ?? 0)
+        : null,
+    };
+  }, mode);
+  await expect.poll(inspect, { timeout: 10_000 }).not.toBeNull();
+  const geometry = (await inspect())!;
+  expect(geometry.planes).toEqual([]);
+  expect(geometry.depth).toBeGreaterThan(.035);
+  expect(geometry.accessory).toBe(true);
+  expect(geometry.attachmentError).toBeLessThan(.001);
+  if (mode === 'nebulizer') expect(geometry.cupWallVertices).toBeGreaterThan(30);
+  // Use the ordinary clinical face close-up and pointer orbit, not a forced
+  // diagnostic camera. Captures prove framing; geometry checks do not prove fit.
+  await page.getByRole('tab', { name: 'Assess', exact: true }).click();
+  await page.getByRole('button', { name: 'Examine Face', exact: true }).click();
+  await page.waitForTimeout(800);
+  const canvas = page.locator('.patient-model-canvas-stage canvas');
+  await canvas.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: info.outputPath(`${mode}-front.png`) });
+  // The eye close-up follows the head continuously. Return to ordinary orbit
+  // before dragging; otherwise all three captures silently show the same view.
+  await page.getByRole('button', { name: 'Back to full body', exact: true }).click();
+  await page.waitForTimeout(800);
+  const { x, y } = await canvas.evaluate(canvas => {
+    const box = canvas.getBoundingClientRect();
+    for (const fy of [.4, .6, .3, .7]) for (const fx of [.15, .85, .25, .75]) {
+      const x = box.x + box.width * fx, y = box.y + box.height * fy;
+      if (document.elementFromPoint(x, y) === canvas) return { x, y };
+    }
+    throw new Error('No unobstructed canvas point available for orbit');
+  });
+  for (const [label, delta] of [['left', 180], ['right', -360]] as const) {
+    const beforeAngle = await page.evaluate(() => window.__r3f!.get().controls!.getAzimuthalAngle());
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + delta, y, { steps: 20 });
+    await page.mouse.up();
+    await page.waitForTimeout(500);
+    const afterAngle = await page.evaluate(() => window.__r3f!.get().controls!.getAzimuthalAngle());
+    expect(Math.abs(afterAngle - beforeAngle)).toBeGreaterThan(.1);
+    await page.screenshot({ path: info.outputPath(`${mode}-${label}.png`) });
+    expect((await inspect())!.attachmentError).toBeLessThan(.001);
+  }
+  await page.keyboard.press('Escape');
+  await page.getByRole('tab', { name: 'Treat', exact: true }).click();
+}
+
 test('deliberate measurements and respiratory care change the same patient', async ({ page }, info) => {
   test.setTimeout(180_000);
   const errors: string[] = [];
@@ -106,6 +178,7 @@ test('deliberate measurements and respiratory care change the same patient', asy
   await expect.poll(() => cyanosis(page)).toBe(false);
   await expect(page.locator('[data-applied-equipment="nonrebreather"]')).toBeVisible();
   await expect(monitor.getByText('RR 28', { exact: true })).toBeVisible();
+  await verifyFittedMask(page, info, 'nonrebreather');
   await page.getByRole('button', { name: 'Select Nebuliser Mask', exact: true }).click();
   const nebuliser = page.getByRole('dialog', { name: 'Apply nebuliser mask', exact: true });
   for (const step of ['Assemble and connect', 'Explain and coach', 'Fit the mask', 'Start aerosol flow', 'Reassess response']) {
@@ -116,10 +189,30 @@ test('deliberate measurements and respiratory care change the same patient', asy
   await expect(monitor.getByText('RR 14', { exact: true })).toBeVisible();
   await expect(page.locator('[data-applied-equipment="nonrebreather"]')).toHaveCount(0);
   await expect(page.locator('[data-applied-equipment="nebulizer"]')).toBeVisible();
+  await verifyFittedMask(page, info, 'nebulizer');
   await page.getByRole('tab', { name: 'History', exact: true }).click();
   await page.getByRole('textbox', { name: 'Your question to the patient' }).fill('How do you feel?');
   await page.getByRole('button', { name: 'Send question', exact: true }).click();
   await expect(page.getByRole('log')).toContainText('Breathing feels easier now. I can talk more comfortably.');
   await page.screenshot({ path: info.outputPath('after-care.png') });
   expect(errors).toEqual([]);
+});
+
+test('other respiratory cases retain their shared fitted equipment', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('paramedic-studio-voice-enabled', 'false'));
+  await page.goto('/?devLiveCase=resp-003');
+  await page.getByRole('tab', { name: 'Treat', exact: true }).click();
+  await page.getByRole('button', { name: 'Select Venturi Mask 28%', exact: true }).click();
+  const procedure = page.getByRole('dialog', { name: /Apply 28% Venturi mask/i });
+  for (const step of ['Select valve and connect oxygen', 'Seat the mask', 'Set prescribed flow', 'Confirm response']) {
+    await procedure.getByRole('button', { name: `Perform: ${step}` }).click();
+  }
+  await procedure.getByRole('button', { name: /Controlled O₂ running — target 88–92%/i }).click();
+  await expect.poll(() => page.evaluate(() => {
+    const scene = window.__r3f?.get().scene;
+    const mask = scene?.getObjectByName('applied-venturi-mask');
+    let planes = 0;
+    mask?.traverse(object => { if ((object as THREE.Mesh).geometry?.type === 'PlaneGeometry') planes++; });
+    return { planes, pilot: !!scene?.getObjectByName('pilot-mask-tube-exit') };
+  }), { timeout: 30_000 }).toEqual({ planes: 1, pilot: false });
 });

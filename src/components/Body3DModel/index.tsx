@@ -52,6 +52,8 @@ import {
   getFittedFaceEquipmentSpec,
   type FittedFaceEquipmentMode,
 } from './faceEquipment';
+import { PilotRespiratoryMask3D } from './PilotRespiratoryMask3D';
+import { pilotRespiratoryMaskGeometry } from './pilotRespiratoryMaskGeometry';
 import { recommendedManagementTabForCase, type ManagementTab } from '@/components/TreatmentJumpBagPanel';
 import { CLOTHING_PARTING } from './ClothingLayer';
 import { usePatientVoice } from '@/hooks/usePatientVoice';
@@ -1745,7 +1747,12 @@ function AppliedFittedFaceEquipment3D(props: {
   scale: number;
   width: number;
   height: number;
+  pilotVolumetricMasks?: boolean;
+  tubeExitOffset: [number, number, number];
 }) {
+  if (props.pilotVolumetricMasks && (props.mode === 'nonrebreather' || props.mode === 'nebulizer')) {
+    return <PilotRespiratoryMask3D {...props} mode={props.mode} />;
+  }
   return props.mode === 'cpap'
     ? <AppliedCpapMask3D {...props} />
     : <AppliedTextureFaceEquipment3D {...props} />;
@@ -2241,6 +2248,7 @@ function TreatmentEquipmentOverlay({
   patientScale = 1,
   faceAttachment = null,
   seatedSupportLift = 0,
+  pilotVolumetricMasks = false,
 }: {
   appliedTreatmentIds: string[];
   sampler: SurfaceSampler | null;
@@ -2251,6 +2259,7 @@ function TreatmentEquipmentOverlay({
   patientScale?: number;
   faceAttachment?: THREE.Group | null;
   seatedSupportLift?: number;
+  pilotVolumetricMasks?: boolean;
 }) {
   const equipment = useMemo(
     () => buildTreatmentEquipmentState(appliedTreatmentIds),
@@ -2300,6 +2309,15 @@ function TreatmentEquipmentOverlay({
   // Texture silhouettes alone collapse edge-on. A patient-space harness keeps
   // every fitted mask visibly wrapped around the head from oblique views.
   const oxygenMaskNeedsHarness = fittedFaceSpec != null;
+  const pilotHarnessAnchors = pilotVolumetricMasks && fittedFaceSpec
+    && (fittedFaceSpec.mode === 'nonrebreather' || fittedFaceSpec.mode === 'nebulizer')
+    ? pilotRespiratoryMaskGeometry(fittedFaceSpec.mode, fittedFaceSpec.width, fittedFaceSpec.height, [0, 0, 0])
+      .strapAnchors.map(point => fittedAnchor(
+        point[0] + fittedFaceSpec.centre[0],
+        point[1] + fittedFaceSpec.centre[1],
+        point[2] + fittedFaceSpec.centre[2],
+      ))
+    : null;
   const faceHarnessPoints: Array<[number, number, number]> = fittedFaceSpec?.mode === 'cpap'
     ? [
         fittedAnchor(-0.068, 1.66, 0.03),
@@ -2308,10 +2326,10 @@ function TreatmentEquipmentOverlay({
         fittedAnchor(0.068, 1.66, 0.03),
       ]
     : [
-        fittedAnchor(-0.064, 1.635, 0.03),
+        pilotHarnessAnchors?.[0] ?? fittedAnchor(-0.064, 1.635, 0.03),
         fittedAnchor(-0.082, 1.665, -0.08),
         fittedAnchor(0.082, 1.665, -0.08),
-        fittedAnchor(0.064, 1.635, 0.03),
+        pilotHarnessAnchors?.[1] ?? fittedAnchor(0.064, 1.635, 0.03),
       ];
   const equipmentScale = Math.max(0.62, Math.min(1, 0.55 + patientScale * 0.45));
   const hasSiteAccess = equipment.siteControls.some(control => control.treatmentId === 'iv_access' || control.treatmentId === 'io_access');
@@ -2347,6 +2365,12 @@ function TreatmentEquipmentOverlay({
         <>
           <AppliedFittedFaceEquipment3D
             mode={fittedFaceSpec.mode}
+            pilotVolumetricMasks={pilotVolumetricMasks}
+            tubeExitOffset={[
+              fittedFaceSpec.tubeExit[0] - fittedFaceSpec.centre[0],
+              fittedFaceSpec.tubeExit[1] - fittedFaceSpec.centre[1],
+              fittedFaceSpec.tubeExit[2] - fittedFaceSpec.centre[2],
+            ]}
             position={fittedAnchor(...fittedFaceSpec.centre)}
             rotation={faceAttachment ? [0, 0, 0] : faceRotation}
             scale={faceAttachment ? 1 : faceEquipmentScale}
@@ -6772,6 +6796,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                   canvas controls or equipment status while it loads. */}
               <Suspense fallback={null}>
                 <TreatmentEquipmentOverlay
+                  pilotVolumetricMasks={caseData.id === 'resp-001'}
                   seatedSupportLift={seatedSupportLift}
                   faceAttachment={faceAttachment}
                   appliedTreatmentIds={appliedTreatmentIds}
