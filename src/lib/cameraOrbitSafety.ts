@@ -8,6 +8,21 @@ export interface CameraOrbitSafety {
   maxPolarAngle: number;
 }
 
+/**
+ * Physical shell used by the resp-001 villa profile. The front wall is beyond
+ * the most distant supported camera position, so it encloses the room without
+ * becoming a scenic card in the patient-facing view.
+ */
+export const RESP001_VILLA_SHELL = {
+  halfWidth: 3.25,
+  backZ: -2.6,
+  frontZ: 5.25,
+  floorY: -0.05,
+  ceilingY: 2.7,
+  wallDepth: 0.06,
+  overviewTarget: { x: 0, y: 0.751, z: 0.78 },
+} as const;
+
 const OPEN_SCENE: CameraOrbitSafety = {
   minAzimuthAngle: -Infinity,
   maxAzimuthAngle: Infinity,
@@ -16,15 +31,16 @@ const OPEN_SCENE: CameraOrbitSafety = {
   maxPolarAngle: Math.PI / 2 + 0.22,
 };
 
-// Villa room front (open) at z=+2.8, back wall at z=-2.6, hall extending to
-// z=-5.4. Side walls: x=±3.25. Floor ~y=0, ceiling ~y=+2.75. Camera eye ~y=1.6.
+// Shared villa room front is open at z=+2.8. The resp-001 profile adds a
+// physical front wall at RESP001_VILLA_SHELL.frontZ, beyond the camera orbit.
+// Back wall: z=-2.6; hall: z=-5.4; side walls: x=±3.25.
 
 /**
  * Keep a first-person camera inside authored indoor shells.
  *
- * The room fronts are deliberately open, so indoor care is viewed from the
- * same side a crew entered. Posterior examination is a patient movement (the
- * Log Roll workflow), not a 180° camera orbit through the back wall.
+ * Indoor care is viewed from the same side a crew entered. Posterior
+ * examination is a patient movement (the Log Roll workflow), not a 180°
+ * camera orbit through the back wall.
  */
 export function cameraOrbitSafetyForEnvironment(variant: EnvironmentVariant): CameraOrbitSafety {
   if (variant === 'clinic') {
@@ -38,10 +54,8 @@ export function cameraOrbitSafetyForEnvironment(variant: EnvironmentVariant): Ca
     };
   }
   if (variant === 'home') {
-    // Villa room front (open) at z=+2.8, back wall at z=-2.6, hall extending to z=-5.4
-    // Side walls: x=±3.25. Floor ~y=0, ceiling ~y=+2.75. Camera eye level ~y=+1.6
-    // Clamp azimuth to keep camera within room width, clamp distance to stay in front wall
-    // and ceiling buffer, use polar-angle limits for floor/ceiling clearance.
+    // Shared villa front: z=+2.8. The resp-001 shell extends to z=+5.25.
+    // Clamp azimuth to room width and polar angle to floor/ceiling clearance.
     return {
       minAzimuthAngle: -Math.PI / 4,
       maxAzimuthAngle: Math.PI / 4,

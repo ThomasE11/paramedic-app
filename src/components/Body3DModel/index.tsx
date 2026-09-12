@@ -6815,10 +6815,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 maxDistance={caseData.id === 'resp-001' && showEyeContext ? 1 : cameraOrbitSafety.maxDistance}
                 minAzimuthAngle={cameraOrbitSafety.minAzimuthAngle}
                 maxAzimuthAngle={cameraOrbitSafety.maxAzimuthAngle}
-                minPolarAngle={Math.PI * 0.15}
+                minPolarAngle={caseData.id === 'resp-001' && !showEyeContext ? cameraOrbitSafety.minPolarAngle : Math.PI * 0.15}
                 // The focal point is on the patient, above their support.
                 // Never orbit below that plane into the road/floor underside.
-                maxPolarAngle={caseData.id === 'resp-001' && showEyeContext ? Math.PI * .65 : Math.PI / 2 - 0.05}
+                maxPolarAngle={caseData.id === 'resp-001' && showEyeContext ? Math.PI * .65 : caseData.id === 'resp-001' ? cameraOrbitSafety.maxPolarAngle : Math.PI / 2 - 0.05}
                 onStart={cancelCameraAnimation}
               />
             </Canvas>
