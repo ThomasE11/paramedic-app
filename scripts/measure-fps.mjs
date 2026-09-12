@@ -8,6 +8,9 @@ const ipad = args.includes('--ipad');
 const forceDegrade = args.includes('--force-degrade');
 const modelArg = args.find((a) => a.startsWith('--model='));
 const modelQuery = modelArg ? `&model=${modelArg.split('=')[1]}` : '';
+const caseArg = args.find((a) => a.startsWith('--case='));
+const caseId = caseArg?.split('=')[1]?.trim();
+if (caseArg && !caseId) throw new Error('--case requires a case id, for example --case=resp-001');
 
 // Playwright's lightweight headless shell is present in CI, while the full
 // bundled Chromium may not be. Hardware desktop runs use the installed Chrome
@@ -38,18 +41,24 @@ try {
   // preserveDrawingBuffer and deliberately pins AdaptiveQuality at tier 0 for
   // deterministic screenshots; measuring that path reported ~5 FPS and hid
   // whether the production degrade ladder was actually protecting devices.
-  await page.goto(`${base}/?fpsProbe=1${modelQuery}`, { waitUntil: 'networkidle' });
-  await clickStep(page.getByRole('button', { name: /Start Training/i }).first());
-  await page
-    .getByRole('button', { name: /Skip Tour/i })
-    .click({ force: forceDegrade, timeout: forceDegrade ? 60_000 : 5_000 })
-    .catch(() => {});
-  await clickStep(page.getByRole('button', { name: /Launch smart case|Generate Case/i }).first());
-  await clickStep(page.getByRole('button', { name: /Begin Scene Survey/i }));
-  await clickStep(page.getByRole('button', { name: /^Next$/i }));
-  await clickStep(page.getByRole('button', { name: /None identified/i }));
-  await clickStep(page.getByRole('button', { name: /Scene is safe/i }));
-  await clickStep(page.getByRole('button', { name: /Enter Scene/i }));
+  if (caseId) {
+    const params = new URLSearchParams({ devLiveCase: caseId, fpsProbe: '1' });
+    if (modelArg) params.set('model', modelArg.split('=')[1]);
+    await page.goto(`${base}/?${params}`, { waitUntil: 'networkidle' });
+  } else {
+    await page.goto(`${base}/?fpsProbe=1${modelQuery}`, { waitUntil: 'networkidle' });
+    await clickStep(page.getByRole('button', { name: /Start Training/i }).first());
+    await page
+      .getByRole('button', { name: /Skip Tour/i })
+      .click({ force: forceDegrade, timeout: forceDegrade ? 60_000 : 5_000 })
+      .catch(() => {});
+    await clickStep(page.getByRole('button', { name: /Launch smart case|Generate Case/i }).first());
+    await clickStep(page.getByRole('button', { name: /Begin Scene Survey/i }));
+    await clickStep(page.getByRole('button', { name: /^Next$/i }));
+    await clickStep(page.getByRole('button', { name: /None identified/i }));
+    await clickStep(page.getByRole('button', { name: /Scene is safe/i }));
+    await clickStep(page.getByRole('button', { name: /Enter Scene/i }));
+  }
 
   const canvas = page.locator('canvas').first();
   await canvas.waitFor({ state: 'visible' });
