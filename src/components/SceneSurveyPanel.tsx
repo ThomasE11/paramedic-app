@@ -86,7 +86,7 @@ type SceneTone = {
   floor: string;
   patientPose: string;
   responderLine: string;
-  setting: 'road' | 'industrial' | 'public' | 'home' | 'fire' | 'medical';
+  setting: 'road' | 'industrial' | 'agricultural' | 'public' | 'water' | 'home' | 'fire' | 'heat' | 'medical';
 };
 
 type HazardHotspot = {
@@ -306,16 +306,19 @@ export function sceneSurveySetting(caseData: CaseScenario): SceneTone['setting']
     case 'roadside':
       return 'road';
     case 'industrial':
-    case 'agricultural':
       return 'industrial';
+    case 'agricultural':
+      return 'agricultural';
     case 'home':
       return 'home';
     case 'fire':
-    case 'heat':
       return 'fire';
+    case 'heat':
+      return 'heat';
     case 'public':
-    case 'water':
       return 'public';
+    case 'water':
+      return 'water';
     case 'clinic':
       return 'medical';
     default:
@@ -346,6 +349,16 @@ function inferSceneTone(caseData: CaseScenario): SceneTone {
       setting: 'road',
     };
   }
+  if (authoredSetting === 'agricultural') {
+    return {
+      gradient: 'from-emerald-950 via-lime-950 to-stone-900',
+      accent: 'bg-lime-300',
+      floor: 'bg-lime-500/15',
+      patientPose: 'rotate-[4deg]',
+      responderLine: 'Open ground, chemical drift, machinery and remote access.',
+      setting: 'agricultural',
+    };
+  }
   if (authoredSetting === 'industrial' || (!authoredSetting && /construction|industrial|factory|warehouse|machinery|worksite/.test(haystack))) {
     return {
       gradient: 'from-stone-950 via-zinc-950 to-slate-900',
@@ -356,6 +369,16 @@ function inferSceneTone(caseData: CaseScenario): SceneTone {
       setting: 'industrial',
     };
   }
+  if (authoredSetting === 'heat') {
+    return {
+      gradient: 'from-orange-950 via-amber-950 to-stone-900',
+      accent: 'bg-amber-300',
+      floor: 'bg-orange-500/15',
+      patientPose: 'rotate-[-4deg]',
+      responderLine: 'Radiant heat, hot surfaces, shade and cooling access.',
+      setting: 'heat',
+    };
+  }
   if (authoredSetting === 'fire' || (!authoredSetting && /\b(fire|burn|heat|smoke|scald)\b/.test(haystack))) {
     return {
       gradient: 'from-orange-950 via-slate-950 to-slate-900',
@@ -364,6 +387,16 @@ function inferSceneTone(caseData: CaseScenario): SceneTone {
       patientPose: 'rotate-[-10deg]',
       responderLine: 'Heat shimmer, smoke risk, rapid scene control.',
       setting: 'fire',
+    };
+  }
+  if (authoredSetting === 'water') {
+    return {
+      gradient: 'from-cyan-950 via-sky-950 to-slate-900',
+      accent: 'bg-cyan-200',
+      floor: 'bg-cyan-500/20',
+      patientPose: 'rotate-[-1deg]',
+      responderLine: 'Wet surfaces, water access, cold exposure and scene edges.',
+      setting: 'water',
     };
   }
   if (authoredSetting === 'public' || (!authoredSetting && /violence|weapon|police|threat|shouting|agitated|psychiatric/.test(haystack))) {
@@ -1409,6 +1442,18 @@ function SceneSettingDetail({ tone }: { tone: SceneTone }) {
     );
   }
 
+  if (tone.setting === 'agricultural') {
+    return (
+      <>
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-lime-950/70" />
+        <div className="absolute bottom-24 left-0 right-0 h-8 bg-emerald-500/10 blur-md" />
+        <div className="absolute bottom-12 left-7 h-20 w-36 -skew-x-6 rounded-t bg-lime-500/20" />
+        <div className="absolute bottom-10 right-8 h-20 w-24 rounded border border-amber-100/15 bg-amber-500/15" />
+        <div className="absolute bottom-28 right-16 h-20 w-2 rounded bg-white/20" />
+      </>
+    );
+  }
+
   if (tone.setting === 'industrial') {
     return (
       <>
@@ -1429,6 +1474,29 @@ function SceneSettingDetail({ tone }: { tone: SceneTone }) {
         <div className="absolute bottom-16 left-12 h-12 w-20 rounded-md bg-white/8" />
         <div className="absolute bottom-12 right-10 h-24 w-20 rounded-t-full border border-white/10 bg-white/10" />
         <div className="absolute bottom-[72px] right-[70px] h-7 w-7 rounded-full bg-white/20" />
+      </>
+    );
+  }
+
+  if (tone.setting === 'water') {
+    return (
+      <>
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-cyan-700/25" />
+        <div className="absolute bottom-16 left-0 right-0 h-1 bg-cyan-100/50" />
+        <div className="absolute bottom-20 left-8 h-20 w-36 rounded-[50%] border border-cyan-100/30 bg-sky-500/15" />
+        <div className="absolute bottom-12 right-10 h-5 w-24 rotate-6 rounded bg-white/25" />
+        <div className="absolute right-6 top-7 h-24 w-24 rounded-full bg-cyan-200/15 blur-xl" />
+      </>
+    );
+  }
+
+  if (tone.setting === 'heat') {
+    return (
+      <>
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-orange-900/35" />
+        <div className="absolute left-8 top-8 h-28 w-28 rounded-full bg-amber-300/25 blur-xl" />
+        <div className="absolute bottom-14 left-14 h-3 w-40 -rotate-3 rounded-full bg-amber-100/15 blur-sm" />
+        <div className="absolute bottom-10 right-8 h-16 w-28 rounded border border-white/10 bg-stone-900/30" />
       </>
     );
   }

@@ -34,12 +34,12 @@ describe('scene survey setting', () => {
   it.each([
     ['roadside', 'road'],
     ['industrial', 'industrial'],
-    ['agricultural', 'industrial'],
+    ['agricultural', 'agricultural'],
     ['home', 'home'],
     ['fire', 'fire'],
-    ['heat', 'fire'],
+    ['heat', 'heat'],
     ['public', 'public'],
-    ['water', 'public'],
+    ['water', 'water'],
     ['clinic', 'medical'],
   ] as const)('maps authored %s scenes to %s survey dressing', (environmentVariant, expected) => {
     const sceneCase = {
