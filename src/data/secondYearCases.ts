@@ -933,7 +933,10 @@ export const secondYearCases: CaseScenario[] = [
       description: 'Home, patient in living room, wife present',
       hazards: ['None identified'],
       bystanders: 'Wife present and cooperative',
-      environment: 'Safe home environment'
+      environment: 'Safe home environment',
+      environmentVariant: 'home',
+      sceneImagePath: '/scene-assets/home-stroke-elderly-male-uae.png',
+      sceneImageCaption: 'Living room — home, elderly male patient'
     },
     initialPresentation: {
       generalImpression: 'Elderly male, alert but with obvious left-sided weakness',
