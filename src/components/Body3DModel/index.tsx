@@ -16,7 +16,7 @@ import * as THREE from 'three';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
-import { BodyMesh, getTreatmentBayTransform, treatmentBayClinicalToWorld, type BayPatientStage } from './BodyMesh';
+import { BodyMesh, getTreatmentBayTransform, treatmentBayClinicalToWorld, RESP001_SEATED_SUPPORT_LIFT, type BayPatientStage } from './BodyMesh';
 import { resolveAssessmentContact } from './assessmentContact';
 import { PupilLightExam, PupilLightControls } from './PupilLightExam';
 import { getBreathingPattern, liveBreathingDepth } from '@/lib/breathingPresentation';
@@ -552,6 +552,7 @@ function TreatmentBayImmersionLayer({
   patientScale = 1,
   faceAttachment = null,
   showWallMonitor = true,
+  seatedSupportLift = 0,
 }: {
   appliedTreatmentIds: string[];
   active: boolean;
@@ -562,6 +563,7 @@ function TreatmentBayImmersionLayer({
   patientScale?: number;
   faceAttachment?: THREE.Group | null;
   showWallMonitor?: boolean;
+  seatedSupportLift?: number;
 }) {
   const equipment = useMemo(
     () => buildTreatmentEquipmentState(appliedTreatmentIds),
@@ -571,7 +573,7 @@ function TreatmentBayImmersionLayer({
   if (!active) return null;
 
   const clinicalPoint = (point: [number, number, number]) =>
-    treatmentBayClinicalToWorld(point, stage, posture, mobility, patientScale);
+    treatmentBayClinicalToWorld(point, stage, posture, mobility, patientScale, seatedSupportLift);
   const fittedFaceSpec = getFittedFaceEquipmentSpec(equipment.oxygen?.mode);
   // Each fitted photo texture already contains a short circuit tail. Continue
   // the world-space tube from that device-specific exit so it reads as one
@@ -586,10 +588,10 @@ function TreatmentBayImmersionLayer({
   const oxygenCylinderZ = uprightPatient ? 0.72 : (fittedTubeExit?.[2] ?? legacyOxygenFace[2]) + 0.16;
   const oxygenCylinderBase: [number, number, number] = [0.66, -0.045, oxygenCylinderZ];
   const oxygenRegulator: [number, number, number] = [0.66, 0.43, oxygenCylinderZ];
-  const chestLeft = treatmentBayClinicalToWorld([-0.03, 1.23, 0.25], stage, posture, mobility, patientScale);
-  const chestRight = treatmentBayClinicalToWorld([0.15, 1.15, 0.25], stage, posture, mobility, patientScale);
-  const ivSite = treatmentBayClinicalToWorld([-0.23, 0.82, 0.24], stage, posture, mobility, patientScale);
-  const headPadZ = treatmentBayClinicalToWorld([0, 1.56, 0], stage, posture, mobility, patientScale)[2];
+  const chestLeft = clinicalPoint([-0.03, 1.23, 0.25]);
+  const chestRight = clinicalPoint([0.15, 1.15, 0.25]);
+  const ivSite = clinicalPoint([-0.23, 0.82, 0.24]);
+  const headPadZ = clinicalPoint([0, 1.56, 0])[2];
 
   return (
     <group>
@@ -2238,6 +2240,7 @@ function TreatmentEquipmentOverlay({
   mobility = 'recumbent',
   patientScale = 1,
   faceAttachment = null,
+  seatedSupportLift = 0,
 }: {
   appliedTreatmentIds: string[];
   sampler: SurfaceSampler | null;
@@ -2247,6 +2250,7 @@ function TreatmentEquipmentOverlay({
   mobility?: PatientMobility;
   patientScale?: number;
   faceAttachment?: THREE.Group | null;
+  seatedSupportLift?: number;
 }) {
   const equipment = useMemo(
     () => buildTreatmentEquipmentState(appliedTreatmentIds),
@@ -2282,7 +2286,7 @@ function TreatmentEquipmentOverlay({
   // frame for airway devices so masks remain fitted after the posture changes.
   const faceAnchor = (x: number, y: number, z: number): [number, number, number] =>
     presentation === 'treatment-bay'
-      ? treatmentBayClinicalToWorld([x, y, z], bayStage, posture, mobility, patientScale)
+      ? treatmentBayClinicalToWorld([x, y, z], bayStage, posture, mobility, patientScale, seatedSupportLift)
       : anchor(x, y, z);
   const faceRotation: [number, number, number] = presentation === 'treatment-bay'
     ? getTreatmentBayTransform(bayStage, posture, mobility, patientScale).rotation
@@ -4110,6 +4114,7 @@ function getTreatmentBayCameraFocus(
   posture: PatientPosture,
   mobility: PatientMobility = 'recumbent',
   patientScale = 1,
+  seatedSupportLift = 0,
 ) {
   const cameraScale = Math.max(0.6, Math.min(1, patientScale));
   if (mobility === 'pacing') {
@@ -4128,7 +4133,7 @@ function getTreatmentBayCameraFocus(
     // portrait cropped both feet and made pedal assessment impossible from the
     // overview. A slightly lower target and longer three-quarter view retain
     // the face while showing knees, ankles, soles and their interaction sites.
-    const stageLift = 0;
+    const stageLift = mobility === 'standing' ? 0 : seatedSupportLift;
     const target: [number, number, number] = [0, 0.70 * patientScale + stageLift, 0.18];
     return {
       // A slight three-quarter arrival angle makes the forward trunk lean and
@@ -5209,6 +5214,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // until a casualty is selected. Do not render that metadata as a newborn.
   const activePatientAge = caseData.mci?.isMCI ? undefined : caseData.patientInfo?.age;
   const patientScale = patientExpectedHeightMetres(activePatientAge) / 1.8;
+  const seatedSupportLift = caseData.id === 'resp-001' ? RESP001_SEATED_SUPPORT_LIFT : 0;
   // Scene-contextual environment: villa cases render in a living room,
   // street cases at a roadside, mall cases in a public atrium.
   const bayVariant = useMemo(() => deriveSceneEnvironment(caseData), [caseData]);
@@ -5301,7 +5307,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const overviewCameraFocus = useMemo(
     () => {
       const focus = treatmentBayOverviewEnabled
-        ? getTreatmentBayCameraFocus(bayStage, patientPosture, patientMobility, patientScale)
+        ? getTreatmentBayCameraFocus(bayStage, patientPosture, patientMobility, patientScale, seatedSupportLift)
         : getUprightCameraFocus(patientScale);
       if (caseData.id === 'resp-001' && treatmentBayOverviewEnabled && (patientPosture === 'tripod' || patientPosture === 'seated')) {
         // Orbit around the patient root, not a point 60cm behind the chair.
@@ -5313,7 +5319,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       }
       return focus;
     },
-    [caseData.id, treatmentBayOverviewEnabled, bayStage, patientPosture, patientMobility, patientScale],
+    [caseData.id, treatmentBayOverviewEnabled, bayStage, patientPosture, patientMobility, patientScale, seatedSupportLift],
   );
 
   // OrbitControls target is imperative state. Initialise/reset it only for the
@@ -5388,8 +5394,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   }, [patientSounds, breathRateRpm, isInArrest, patientUnconscious, caseData]);
 
   const ambientPatientPosition = useMemo(() => caseData.id === 'resp-001'
-    ? treatmentBayClinicalToWorld([0, 1.31, 0], bayStage, patientPosture, patientMobility, patientScale)
-    : undefined, [caseData.id, bayStage, patientPosture, patientMobility, patientScale]);
+    ? treatmentBayClinicalToWorld([0, 1.31, 0], bayStage, patientPosture, patientMobility, patientScale, seatedSupportLift)
+    : undefined, [caseData.id, bayStage, patientPosture, patientMobility, patientScale, seatedSupportLift]);
 
   // Condition-responsive idle motion cues (wince/shiver/gasp/tremor/seizure/
   // agitation/chest-clutch) — pure derivation, consumed by IdleAnimations
@@ -5722,7 +5728,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         focus.target[0],
         focus.target[1],
         stepId === 'posterior-logroll' ? -0.08 : 0.10,
-      ], bayStage, patientPosture, patientMobility, patientScale);
+      ], bayStage, patientPosture, patientMobility, patientScale, seatedSupportLift);
       let clinicalDirection: [number, number, number] = patientPosture === 'tripod' || patientPosture === 'seated' || patientMobility === 'standing' || patientMobility === 'pacing'
         ? (stepId === 'face' || stepId === 'head' || stepId === 'neck-cspine'
             ? [0.04, 0.48, 1]
@@ -5781,7 +5787,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       const pos = fitCameraPos(controlsRef.current, target, dir, (REGION_RADIUS[stepId] ?? 0.28) * cameraScale);
       animateCamera(controlsRef.current, pos, target, 460);
     }
-  }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, bayStage, patientVoice, patientPosture, patientMobility, treatmentBayOverviewEnabled, patientScale, faceAttachment]);
+  }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, bayStage, patientVoice, patientPosture, patientMobility, treatmentBayOverviewEnabled, patientScale, faceAttachment, seatedSupportLift]);
 
   // Phase 2F: Sound progress animation
   const startSoundProgress = useCallback((actionId: string, durationMs: number) => {
@@ -5872,6 +5878,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               patientPosture,
               patientMobility,
               patientScale,
+              seatedSupportLift,
             ),
           );
           let clinicalDirection: [number, number, number] =
@@ -6006,7 +6013,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       playPercussionSound(percType);
       startSoundProgress(actionId, PERCUSSION_DURATION);
     }
-  }, [activeRegion, animateCamera, appliedTreatmentIds, bayStage, caseData, effectiveVitals, patientMobility, patientPosture, patientScale, patientSounds, patientVoice, revealedFindings, startSoundProgress, isInArrest, surfaceSampler, treatmentBayOverviewEnabled, faceAttachment]);
+  }, [activeRegion, animateCamera, appliedTreatmentIds, bayStage, caseData, effectiveVitals, patientMobility, patientPosture, patientScale, patientSounds, patientVoice, revealedFindings, startSoundProgress, isInArrest, surfaceSampler, treatmentBayOverviewEnabled, faceAttachment, seatedSupportLift]);
   const handleExamActionRef = useRef(handleExamAction);
   handleExamActionRef.current = handleExamAction;
 
@@ -6652,6 +6659,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               />
 
               <TreatmentBayImmersionLayer
+                seatedSupportLift={seatedSupportLift}
                 faceAttachment={faceAttachment}
                 showWallMonitor={caseData.id !== 'resp-001'}
                 appliedTreatmentIds={appliedTreatmentIds}
@@ -6685,6 +6693,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 sampler={surfaceSampler}
               />
 
+              <group name="anatomy-support-offset" position-y={treatmentBayMode
+                ? getTreatmentBayTransform(bayStage, patientPosture, patientMobility, patientScale, seatedSupportLift).position[1]
+                  - getTreatmentBayTransform(bayStage, patientPosture, patientMobility, patientScale).position[1]
+                : 0}>
               <AnatomyReferenceLayer
                 visible={anatomyLayer === 'skeleton'}
                 presentation={treatmentBayMode ? 'treatment-bay' : 'upright'}
@@ -6694,6 +6706,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 activeRegion={activeRegion}
                 patientAge={activePatientAge}
               />
+              </group>
 
               {!bedsideConversation.active && <LandmarkMarkers
                 landmarks={caseData.id === 'resp-001' ? RESP001_EXAM_LANDMARKS : EXAM_LANDMARKS}
@@ -6759,6 +6772,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                   canvas controls or equipment status while it loads. */}
               <Suspense fallback={null}>
                 <TreatmentEquipmentOverlay
+                  seatedSupportLift={seatedSupportLift}
                   faceAttachment={faceAttachment}
                   appliedTreatmentIds={appliedTreatmentIds}
                   sampler={surfaceSampler}

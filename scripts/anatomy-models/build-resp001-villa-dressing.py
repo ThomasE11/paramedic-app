@@ -222,17 +222,30 @@ def add_breathing_side_table(materials: dict[str, bpy.types.Material]) -> None:
 def add_patient_chair(materials: dict[str, bpy.types.Material]) -> None:
     """Author the resp-001 support chair at the shared seated plant.
 
-    The cushion top is exactly 0.53 m and its R3F depth centre is 0.32 m,
-    matching PATIENT_CHAIR_SEAT_Y / PATIENT_CHAIR_SEAT_Z in kenneyChairPlant.
-    Blender +Y exports towards R3F -Z, hence the -0.32 m depth coordinate.
+    The pilot's live skinned buttock contact sits just beyond the shared chair
+    plant. Move this authored support 0.18 m towards the patient and raise its
+    contact surfaces with the pilot's 0.051 m sole correction. Blender +Y
+    exports towards R3F -Z, hence subtracting the R3F depth shift here.
     """
-    rounded_box("asthma_chair_seat_frame", (0, -0.32, 0.445), (0.66, 0.60, 0.075), materials["wood"], 0.025)
-    rounded_box("asthma_chair_seat_cushion", (0, -0.32, 0.49), (0.62, 0.57, 0.08), materials["linen"], 0.055)
-    rounded_box("asthma_chair_back_frame", (0, -0.055, 0.83), (0.65, 0.065, 0.69), materials["wood"], 0.025)
-    rounded_box("asthma_chair_back_cushion", (0, -0.09, 0.84), (0.57, 0.10, 0.59), materials["linen_light"], 0.075)
+    support_lift = 0.051
+    blender_depth_shift = -0.18
+    rounded_box("asthma_chair_seat_frame", (0, -0.32 + blender_depth_shift, 0.445 + support_lift), (0.66, 0.60, 0.075), materials["wood"], 0.025)
+    rounded_box("asthma_chair_seat_cushion", (0, -0.32 + blender_depth_shift, 0.49 + support_lift), (0.62, 0.57, 0.08), materials["linen"], 0.055)
+    rounded_box("asthma_chair_back_frame", (0, -0.055 + blender_depth_shift, 0.83 + support_lift), (0.65, 0.065, 0.69), materials["wood"], 0.025)
+    rounded_box("asthma_chair_back_cushion", (0, -0.09 + blender_depth_shift, 0.84 + support_lift), (0.57, 0.10, 0.59), materials["linen_light"], 0.075)
+    leg_bottom = 0.032
+    leg_top = 0.44 + support_lift
+    leg_height = leg_top - leg_bottom
     for x in (-0.27, 0.27):
         for y in (-0.10, -0.54):
-            leg = cylinder(f"asthma_chair_leg_{x}_{y}", (x, y, 0.22), 0.028, 0.44, materials["wood"], 16)
+            leg = cylinder(
+                f"asthma_chair_leg_{x}_{y}",
+                (x, y + blender_depth_shift, leg_bottom + leg_height / 2),
+                0.028,
+                leg_height,
+                materials["wood"],
+                16,
+            )
             leg.rotation_euler[1] = math.radians(2 if x < 0 else -2)
 
 

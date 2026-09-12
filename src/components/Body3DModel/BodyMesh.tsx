@@ -95,12 +95,15 @@ const BAY_PATIENT_SCALE = 1.04;
 // origin across adult female/male bodies. The midpoint keeps either sex within
 // roughly 2 cm of the room floor, then scales continuously for younger bodies.
 const SEATED_SOLE_LIFT = 0.305;
+// Calibrated against the pilot's 32 mm rug, rather than the generic floor.
+export const RESP001_SEATED_SUPPORT_LIFT = 0.051;
 
 export function getTreatmentBayTransform(
   stage: BayPatientStage = 'stretcher',
   posture: string | null = null,
   mobility: PatientMobility = 'recumbent',
   patientScale = 1,
+  seatedSupportLift = 0,
 ) {
   if (mobility === 'standing' || mobility === 'pacing') {
     return {
@@ -131,7 +134,7 @@ export function getTreatmentBayTransform(
   // same pelvis plant so the chair still supports the sit; the morph raises
   // the calves onto the ottoman instead of dropping the whole body.
   const positionY = uprightSeated
-    ? BAY_SUPPORT_Y.floor - SEATED_SOLE_LIFT * BAY_PATIENT_SCALE * patientScale
+    ? BAY_SUPPORT_Y.floor - SEATED_SOLE_LIFT * BAY_PATIENT_SCALE * patientScale + seatedSupportLift
     // A lateral patient rests on the shoulder/hip contour, roughly 0.33 m
     // from the rig origin—not on the 0.44 m posterior depth used for supine.
     // Keeping the supine height here is what made recovery patients hover.
@@ -151,8 +154,9 @@ export function treatmentBayClinicalToWorld(
   posture: string | null = null,
   mobility: PatientMobility = 'recumbent',
   patientScale = 1,
+  seatedSupportLift = 0,
 ): [number, number, number] {
-  const transform = getTreatmentBayTransform(stage, posture, mobility, patientScale);
+  const transform = getTreatmentBayTransform(stage, posture, mobility, patientScale, seatedSupportLift);
   const projected = new THREE.Vector3(...point)
     .multiplyScalar(patientScale)
     .multiplyScalar(transform.scale)
@@ -959,8 +963,8 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   const tintTmpRef = useRef(new THREE.Color());
   const treatmentBayPresentation = presentation === 'treatment-bay';
   const treatmentBayTransform = useMemo(
-    () => getTreatmentBayTransform(bayStage, posture, mobility, patientScale),
-    [bayStage, mobility, posture, patientScale],
+    () => getTreatmentBayTransform(bayStage, posture, mobility, patientScale, braceHandsOnKnees ? RESP001_SEATED_SUPPORT_LIFT : 0),
+    [bayStage, mobility, posture, patientScale, braceHandsOnKnees],
   );
   // Diaphoresis (sweat sheen): the eased 0..1 scalar the frame loop drives
   // toward the `diaphoresis` prop (fast up ~10 s, slow dry-out ~60 s), plus a
