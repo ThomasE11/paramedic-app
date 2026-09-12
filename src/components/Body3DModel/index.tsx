@@ -6589,7 +6589,13 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               </Suspense>
 
               {quality.contactShadows && (
-                <ContactShadows position={[0, -0.01, 0]} opacity={0.32} scale={3.4} blur={3.4} far={3} />
+                <ContactShadows
+                  name="patient-contact-shadow"
+                  // The authored villa rug is 32 mm thick. A floor-level
+                  // receiver is hidden beneath it, making contact look absent.
+                  position={[0, caseData.id === 'resp-001' ? 0.033 : -0.01, 0]}
+                  opacity={0.32} scale={3.4} blur={3.4} far={3}
+                />
               )}
 
               {/* Keep the old AO/upscale composer out of clinical care: it
