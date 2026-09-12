@@ -8,14 +8,11 @@
  *     selected by BodyMesh for ambulatory cases; this layer keeps the staged
  *     root planted and supplies eyes/lids for every posture. Unconscious
  *     patients remain still (GCS ≤ 8 / AVPU 'U' / arrest).
- *   • Blink            — swaps `material.map` between two PRE-RENDERED canvas
- *     textures (eyes open / skin-toned lids, built once in EyesLayer). A swap
- *     is a sampler-uniform update, not a texture re-upload, so blinking costs
- *     nothing per frame. Conscious patients blink ~120 ms every 2–6 s
- *     (randomised); unconscious patients keep their eyes closed — itself a
- *     clinical cue. Models with REAL eyeball meshes (Stage 2: nodes
- *     eyeL/eyeR) additionally hide the eyeballs while the lids are closed,
- *     so the closed-lid texture isn't pierced by the spheres.
+ *   • Blink            — the resp-001 pilot closes physical, skinned lids
+ *     over 180 ms while retaining the eyeballs underneath. Other models keep
+ *     the shared 120 ms pre-rendered eye texture swap and hide real eyeballs
+ *     during closure. Both paths blink every 2–6 s and retain the existing
+ *     unconscious/held-wince closure signal.
  *   • Micro-saccades   — real eyes are never still: tiny conjugate gaze
  *     shifts every ~0.8–3 s (fast ease, both eyes together) on the eye mesh
  *     rotations. Suppressed when unconscious. No-op on painted-eye models.
@@ -31,6 +28,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 const BLINK_SECONDS = 0.12;
+const PILOT_BLINK_SECONDS = 0.18;
 const BLINK_MIN_GAP = 2;
 const BLINK_EXTRA_GAP = 4; // gap = MIN + rand * EXTRA → 2–6 s
 
@@ -57,6 +55,7 @@ export function LifeSigns({ scene, unconscious }: LifeSignsProps) {
     // Absent on painted-eye models; every eyeball feature then no-ops.
     const eyeL = (scene.getObjectByName('eyeL') as THREE.Object3D | undefined) ?? null;
     const eyeR = (scene.getObjectByName('eyeR') as THREE.Object3D | undefined) ?? null;
+    const lids = (scene.getObjectByName('PilotEyelids') as THREE.Mesh | undefined) ?? null;
     return {
       baseRotX: scene.rotation.x,
       baseRotY: scene.rotation.y,
@@ -64,6 +63,7 @@ export function LifeSigns({ scene, unconscious }: LifeSignsProps) {
       eyeMesh: eyeMesh as THREE.Mesh | null,
       eyeL,
       eyeR,
+      lids,
     };
   }, [scene]);
 
@@ -99,7 +99,22 @@ export function LifeSigns({ scene, unconscious }: LifeSignsProps) {
 
     // ---- Blink / GCS-coupled lids -----------------------------------------
     const eyeMesh = nodes.eyeMesh;
-    if (eyeMesh) {
+    if (nodes.lids?.morphTargetDictionary?.eyelids_closed !== undefined) {
+      // Physical pilot lids retain the eyeballs behind the moving panels.
+      // Closing is faster than reopening; the brief overlap hides the socket
+      // without replacing the whole face atlas or making the eyeballs vanish.
+      if (!unconscious && a.t >= a.nextBlinkAt) {
+        a.blinkUntil = a.t + PILOT_BLINK_SECONDS;
+        a.nextBlinkAt = a.t + BLINK_MIN_GAP + Math.random() * BLINK_EXTRA_GAP;
+      }
+      const phase = THREE.MathUtils.clamp((a.t - a.blinkUntil + PILOT_BLINK_SECONDS) / PILOT_BLINK_SECONDS, 0, 1);
+      const closure = unconscious || scene.userData.idleWinceHold === true ? 1
+        : phase < .3 ? THREE.MathUtils.smoothstep(phase, 0, .3)
+          : 1 - THREE.MathUtils.smoothstep(phase, .5, 1);
+      nodes.lids.morphTargetInfluences![nodes.lids.morphTargetDictionary.eyelids_closed] = closure;
+      if (nodes.eyeL) nodes.eyeL.visible = true;
+      if (nodes.eyeR) nodes.eyeR.visible = true;
+    } else if (eyeMesh) {
       const openTex = eyeMesh.userData.eyesOpenTex as THREE.Texture | undefined;
       const closedTex = eyeMesh.userData.eyesClosedTex as THREE.Texture | null | undefined;
       const mat = (Array.isArray(eyeMesh.material) ? eyeMesh.material[0] : eyeMesh.material) as

@@ -921,7 +921,11 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   const loadedGarmentSpecs = useMemo(() => pilotGarment
     ? ALL_GARMENT_GLBS
     : ALL_GARMENT_GLBS.filter(spec => spec.url !== RESP001_GARMENT_GLBS[1].url), [pilotGarment]);
-  const garmentGltfs = useGLTF(loadedGarmentSpecs.map((g) => g.url));
+  const garmentGltfs = useGLTF([
+    ...loadedGarmentSpecs.map((g) => g.url),
+    ...(pilotGarment ? ['/models/resp001-eyelids.glb'] : []),
+  ]);
+  const pilotEyelidScene = pilotGarment ? garmentGltfs[loadedGarmentSpecs.length]?.scene : undefined;
   const garmentScenes = useMemo(() => {
     const map = new Map<string, THREE.Object3D>();
     loadedGarmentSpecs.forEach((g, i) => {
@@ -1198,6 +1202,49 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         const hasEyeMeshes = !!clone.getObjectByName('eyeL') && !!clone.getObjectByName('eyeR');
         paintEyesOnTexture(bodyMesh as THREE.Mesh, pupilLeftMm, pupilRightMm, { hasEyeMeshes });
 
+        // The pilot has actual skinned lid panels. A texture cannot close the
+        // model's open socket boundary; these panels cover the eye physically.
+        if (pilotEyelidScene && (bodyMesh as THREE.SkinnedMesh).isSkinnedMesh) {
+          const body = bodyMesh as THREE.SkinnedMesh;
+          const source = pilotEyelidScene.getObjectByName('PilotEyelids') as THREE.SkinnedMesh | undefined;
+          if (!source?.isSkinnedMesh) throw new Error('Pilot eyelids require a skinned attachment');
+          const geometry = source.geometry.clone();
+          const joints = geometry.getAttribute('skinIndex');
+          const weights = geometry.getAttribute('skinWeight');
+          const boneMap = source.skeleton.bones.map(bone => body.skeleton.bones.findIndex(target => (
+            target.name.replace(/:/g, '') === bone.name.replace(/:/g, '')
+          )));
+          const remapped = new Uint16Array(joints.count * 4);
+          for (let vertex = 0; vertex < joints.count; vertex++) for (let lane = 0; lane < 4; lane++) {
+            const mapped = boneMap[joints.getComponent(vertex, lane)];
+            if (weights.getComponent(vertex, lane) > 0 && (mapped === undefined || mapped < 0)) {
+              throw new Error('Pilot eyelid joint is absent from patient skeleton');
+            }
+            remapped[vertex * 4 + lane] = Math.max(0, mapped ?? 0);
+          }
+          geometry.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(remapped, 4));
+          const lids = new THREE.SkinnedMesh(geometry, body.material);
+          lids.name = 'PilotEyelids';
+          lids.castShadow = true;
+          lids.receiveShadow = true;
+          // A cached neutral-pose sphere does not follow the patient's head.
+          // This tiny attachment must not disappear during a face close-up.
+          lids.frustumCulled = false;
+          lids.morphTargetDictionary = { ...source.morphTargetDictionary };
+          lids.morphTargetInfluences = new Array(source.morphTargetInfluences?.length ?? 0).fill(0);
+          lids.bindMode = body.bindMode;
+          lids.bind(body.skeleton, body.bindMatrix);
+          lids.userData.skipRecolor = true;
+          lids.raycast = () => {};
+          lids.onBeforeRender = () => {
+            for (const [name, sourceIndex] of Object.entries(body.morphTargetDictionary ?? {})) {
+              const targetIndex = lids.morphTargetDictionary?.[name];
+              if (targetIndex !== undefined) lids.morphTargetInfluences![targetIndex] = body.morphTargetInfluences?.[sourceIndex] ?? 0;
+            }
+          };
+          body.add(lids);
+        }
+
         // Case wounds — drawn INTO the freshly-stashed atlases so the blink
         // twin and any later mottling twins inherit them. Runs once per clone;
         // world matrices must be current for the region classification.
@@ -1280,7 +1327,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // scrubs + 2048² eye texture repaint). Opacity is applied live by the
     // effect below; the eyes are baked once (live pupil reading is the 2D panel).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, modelPath, bodyInjuries, garmentScenes, garmentSpecs, mobility, patientHeight, patientGender, patientAge, pilotGarment]); // bodyInjuries: stable per case (memoised upstream + per-case key)
+  }, [scene, modelPath, bodyInjuries, garmentScenes, garmentSpecs, mobility, patientHeight, patientGender, patientAge, pilotGarment, pilotEyelidScene]); // bodyInjuries: stable per case (memoised upstream + per-case key)
 
   const standingArmBones = useMemo(() => (
     ['mixamorig:LeftArm', 'mixamorig:RightArm']
