@@ -7,6 +7,17 @@ import {
 } from './resp001LipArticulation';
 
 describe('resp-001 amplitude-reactive lip articulation', () => {
+  it('does not fold the supporting skin beneath the lower lip during opening', () => {
+    for (const influence of [0.25, 0.5, 0.75, 1]) {
+      let previous = -Infinity;
+      for (let y = 1.515; y <= 1.542; y += 0.00025) {
+        const moved = y + resp001LipArticulationDelta(0, y, 0.150, -1)[1] * influence;
+        expect(moved, `lower-lip support at y=${y}, influence=${influence}`).toBeGreaterThan(previous);
+        previous = moved;
+      }
+    }
+  });
+
   it('separates central vermilion without moving chin or cheek vertices', () => {
     const lower = resp001LipArticulationDelta(0, 1.540, 0.150);
     const upper = resp001LipArticulationDelta(0, 1.546, 0.150);
@@ -88,7 +99,8 @@ describe('resp-001 amplitude-reactive lip articulation', () => {
     expect(lip.getY(3)).toBeLessThan(-0.004);
     expect(lip.getY(4)).toBeLessThan(-0.004);
     expect(lip.getY(2)).toBe(0);
-    expect(lip.getY(5)).toBe(0);
+    expect(lip.getY(5)).toBeLessThan(0); // support follows the lower lip
+    expect(lip.getY(5)).toBeGreaterThan(lip.getY(4));
     const normalMorphs = result.morphAttributes.normal;
     expect(normalMorphs).toBeDefined();
     if (!normalMorphs?.[0]) throw new Error('expected corrected viseme normal');
@@ -113,6 +125,25 @@ describe('resp-001 amplitude-reactive lip articulation', () => {
     geometry.setIndex([0, 1, 2, 3, 5, 4]);
 
     expect([...classifyResp001LipSeamSides(geometry)]).toEqual([1, 1, 0, -1, -1, 0]);
+  });
+
+  it('keeps a curled lower-lip interior on the lower side even above the seam height', () => {
+    const points = [-.02, 1.545, .15, .02, 1.545, .15, 0, 1.560, .145];
+    for (let row = 0; row < 3; row++) for (const [column, x] of [-.02, -.005, .005, .02].entries()) {
+      const y = row === 0 ? 1.545 : row === 2 ? 1.530 : column === 1 ? 1.546 : 1.540;
+      points.push(x, y, .15);
+    }
+    const indices = [0, 1, 2];
+    for (let row = 0; row < 2; row++) for (let column = 0; column < 3; column++) {
+      const a = 3 + row * 4 + column;
+      indices.push(a, a + 4, a + 1, a + 1, a + 4, a + 5);
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+    geometry.setIndex(indices);
+    const sides = classifyResp001LipSeamSides(geometry);
+    expect(sides[8]).toBe(-1);
+    expect(resp001LipArticulationDelta(-.005, 1.546, .15, sides[8] as -1)[1]).toBeLessThan(0);
   });
 
   it('rejects geometry whose existing morph identity cannot be preserved', () => {

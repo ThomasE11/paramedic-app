@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { writeFile } from 'node:fs/promises';
 import type * as THREE from 'three';
 
 // Deliberately synthetic audio tests the real analyser without a cloud voice call.
@@ -40,15 +41,60 @@ test('pilot speech opens opposed lips without translating the entire lower face'
         upper = Math.max(upper, deltas.getY(i));
         lower = Math.min(lower, deltas.getY(i));
       }
-      if (y > 1.49 && y < 1.525) {
+      // The local support band starts at 1.518; test the distant chin below it.
+      if (y > 1.49 && y < 1.510) {
         chin = Math.max(chin, Math.abs(deltas.getY(i)));
         if (normalDeltas) chinNormal = Math.max(chinNormal, Math.hypot(normalDeltas.getX(i), normalDeltas.getY(i), normalDeltas.getZ(i)));
       }
     }
-    return { upper, lower, chin, chinNormal, weight: mesh.morphTargetInfluences![morphIndex] };
+    const indices = mesh.geometry.getIndex()!;
+    const vector = (i: number, influence = 0) => window.__r3f!.get().camera.position.clone().set(
+      positions.getX(i) + deltas.getX(i) * influence,
+      positions.getY(i) + deltas.getY(i) * influence,
+      positions.getZ(i) + deltas.getZ(i) * influence,
+    );
+    let minNormalDot = 1, minAreaRatio = 1, maxEdgeStretch = 1, supportTriangles = 0;
+    let worstTriangle: { influence: number; vertices: number[][] } | null = null;
+    let worstEdge: { influence: number; vertices: number[][] } | null = null;
+    for (let offset = 0; offset < indices.count; offset += 3) {
+      const vertices = [indices.getX(offset), indices.getX(offset + 1), indices.getX(offset + 2)];
+      if (!vertices.every(i => Math.abs(positions.getX(i)) < .031
+        && positions.getY(i) > 1.510 && positions.getY(i) < 1.565 && positions.getZ(i) > .13)) continue;
+      const [a, b, c] = vertices.map(i => vector(i));
+      const normal = b.clone().sub(a).cross(c.clone().sub(a));
+      const area = normal.length();
+      if (area < 1e-10) continue;
+      supportTriangles++;
+      for (const influence of [.25, .5, .75, 1]) {
+        const [aa, bb, cc] = vertices.map(i => vector(i, influence));
+        const changed = bb.clone().sub(aa).cross(cc.clone().sub(aa));
+        const dot = normal.clone().normalize().dot(changed.clone().normalize());
+        if (dot < minNormalDot) {
+          minNormalDot = dot;
+          worstTriangle = { influence, vertices: vertices.map(i => [i, positions.getX(i), positions.getY(i), positions.getZ(i), deltas.getY(i), deltas.getZ(i)]) };
+        }
+        minAreaRatio = Math.min(minAreaRatio, changed.length() / area);
+        for (const [u, v] of [[0, 1], [1, 2], [2, 0]]) {
+          const before = vector(vertices[u]).distanceTo(vector(vertices[v]));
+          const after = vector(vertices[u], influence).distanceTo(vector(vertices[v], influence));
+          if (before > 1e-6 && after / before > maxEdgeStretch) {
+            maxEdgeStretch = after / before;
+            worstEdge = { influence, vertices: [vertices[u], vertices[v]].map(i => [i, positions.getX(i), positions.getY(i), positions.getZ(i), deltas.getY(i), deltas.getZ(i)]) };
+          }
+        }
+      }
+    }
+    return { upper, lower, chin, chinNormal, minNormalDot, minAreaRatio, maxEdgeStretch, supportTriangles, worstTriangle, worstEdge,
+      weight: mesh.morphTargetInfluences![morphIndex] };
   });
   await expect.poll(shape, { timeout: 30_000 }).not.toBeNull();
   const geometry = (await shape())!;
+  await writeFile(info.outputPath('mouth-deformation.json'), JSON.stringify(geometry, null, 2));
+  await info.attach('mouth-deformation.json', { body: JSON.stringify(geometry, null, 2), contentType: 'application/json' });
+  expect(geometry.supportTriangles).toBeGreaterThan(50);
+  expect(geometry.minNormalDot).toBeGreaterThan(0);
+  expect(geometry.minAreaRatio).toBeGreaterThan(.25);
+  expect(geometry.maxEdgeStretch).toBeLessThan(2.5);
   expect(geometry.upper).toBeGreaterThan(.001);
   expect(geometry.lower).toBeLessThan(-.003);
   expect(geometry.chin).toBeLessThan(.001);

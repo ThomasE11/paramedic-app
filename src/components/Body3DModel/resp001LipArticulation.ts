@@ -15,8 +15,13 @@ const LIP_X_FULL = 0.020;
 const LIP_X_OUTER = 0.028;
 const LIP_Y_MIN = 1.536;
 const LIP_Y_FULL_MIN = 1.538;
+// A 4.2 mm lip excursion cannot taper to zero over the previous 2 mm band:
+// its deformation gradient reverses the surface. Carry the supporting skin
+// over 20 mm, below the vermilion, while leaving the far chin/neck untouched.
+const LOWER_LIP_SUPPORT_Y_MIN = 1.518;
 const LIP_Y_FULL_MAX = 1.5485;
-const LIP_Y_MAX = 1.5515;
+const LIP_Y_MAX = 1.5585;
+const LIP_SEAM_Y_MAX = 1.5515;
 const LIP_Z_MIN = 0.138;
 const LIP_Z_FULL = 0.145;
 const LIP_SPLIT_LOW = 1.5425;
@@ -34,8 +39,8 @@ function smoothstep(edge0: number, edge1: number, value: number): number {
 
 /**
  * Relative morph delta in the male Patient mesh's local Three.js frame.
- * Only the measured vermilion moves. Cheek, philtrum, chin, and neck vertices
- * remain exactly at the authored positions.
+ * The vermilion and the skin immediately beneath it move together. Distant
+ * cheek, philtrum, chin, and neck vertices remain at the authored positions.
  */
 export function resp001LipArticulationDelta(
   x: number,
@@ -44,7 +49,7 @@ export function resp001LipArticulationDelta(
   seamSide: Resp001LipSide = 0,
 ): readonly [x: number, y: number, z: number] {
   const lateral = 1 - smoothstep(LIP_X_FULL, LIP_X_OUTER, Math.abs(x));
-  const vertical = smoothstep(LIP_Y_MIN, LIP_Y_FULL_MIN, y)
+  const vertical = smoothstep(LOWER_LIP_SUPPORT_Y_MIN, LIP_Y_FULL_MIN, y)
     * (1 - smoothstep(LIP_Y_FULL_MAX, LIP_Y_MAX, y));
   const anterior = smoothstep(LIP_Z_MIN, LIP_Z_FULL, z);
   const coverage = lateral * vertical * anterior;
@@ -78,7 +83,7 @@ function edgeKey(a: number, b: number): string {
 function isMouthSeamCandidate(position: THREE.BufferAttribute, index: number): boolean {
   return Math.abs(position.getX(index)) <= LIP_X_OUTER
     && position.getY(index) >= LIP_Y_MIN
-    && position.getY(index) <= LIP_Y_MAX
+    && position.getY(index) <= LIP_SEAM_Y_MAX
     && position.getZ(index) >= LIP_Z_MIN;
 }
 
@@ -127,9 +132,10 @@ function correctedNormalDelta(
 /**
  * The MPFB mouth has two coincident but unwelded boundary loops: one belongs
  * to the upper lip, one to the lower. Coordinates alone cannot tell them
- * apart. The adjacent triangle sits above the upper loop and below the lower
- * loop, which gives a stable topology-based classification without changing
- * the model's vertices or indices.
+ * apart. The adjacent triangle identifies each boundary loop. Propagate that
+ * identity through the local lip surface by distance along connected edges:
+ * the curled lower lip can sit above its seam in Y, so height alone would
+ * pull neighbouring vertices in opposite directions and invert their faces.
  */
 export function classifyResp001LipSeamSides(
   geometry: THREE.BufferGeometry,
@@ -220,8 +226,48 @@ export function classifyResp001LipSeamSides(
   }
 
   const sides = new Int8Array(position.count);
-  for (const vertex of upper.vertices) sides[vertex] = 1;
-  for (const vertex of lower.vertices) sides[vertex] = -1;
+  const surface = new Map<number, Set<number>>();
+  // Seed discovery stays restricted to the measured aperture. The curled lip
+  // surface extends above it: carry its identity through the full 10 mm top
+  // support taper instead of switching back to a height guess at the seed ROI.
+  const isLipSupport = (vertex: number) => Math.abs(position.getX(vertex)) <= LIP_X_OUTER
+    && position.getY(vertex) >= LIP_Y_MIN && position.getY(vertex) <= LIP_Y_MAX
+    && position.getZ(vertex) >= LIP_Z_MIN;
+  for (const edge of edges.values()) {
+    if (!isLipSupport(edge.a) || !isLipSupport(edge.b)) continue;
+    if (!surface.has(edge.a)) surface.set(edge.a, new Set());
+    if (!surface.has(edge.b)) surface.set(edge.b, new Set());
+    surface.get(edge.a)!.add(edge.b);
+    surface.get(edge.b)!.add(edge.a);
+  }
+  const distancesFrom = (seeds: number[]) => {
+    const distances = new Float64Array(position.count).fill(Infinity);
+    const queue = seeds.map(vertex => ({ vertex, distance: 0 }));
+    for (const vertex of seeds) distances[vertex] = 0;
+    // A few hundred local vertices, evaluated once when cloning the patient.
+    while (queue.length > 0) {
+      queue.sort((a, b) => b.distance - a.distance);
+      const current = queue.pop()!;
+      if (current.distance > distances[current.vertex]) continue;
+      for (const neighbour of surface.get(current.vertex) ?? []) {
+        const distance = current.distance + Math.hypot(
+          position.getX(neighbour) - position.getX(current.vertex),
+          position.getY(neighbour) - position.getY(current.vertex),
+          position.getZ(neighbour) - position.getZ(current.vertex),
+        );
+        if (distance >= distances[neighbour]) continue;
+        distances[neighbour] = distance;
+        queue.push({ vertex: neighbour, distance });
+      }
+    }
+    return distances;
+  };
+  const upperDistance = distancesFrom(upper.vertices);
+  const lowerDistance = distancesFrom(lower.vertices);
+  for (const vertex of surface.keys()) {
+    if (upperDistance[vertex] < lowerDistance[vertex]) sides[vertex] = 1;
+    if (lowerDistance[vertex] < upperDistance[vertex]) sides[vertex] = -1;
+  }
   return sides;
 }
 
