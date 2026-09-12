@@ -1784,7 +1784,9 @@ export function SceneSurveyPanel({ caseData, onEnterScene, onBack }: SceneSurvey
   const [hazardsIdentified, setHazardsIdentified] = useState<string[]>([]);
   const [sceneSafe, setSceneSafe] = useState<boolean | null>(null);
   const [resourcesRequested, setResourcesRequested] = useState<string[]>([]);
-  const [ppeSelected, setPpeSelected] = useState<string[]>(() => mandatoryScenePpe(caseData));
+  // PPE is a learner decision, not an automatic answer. Required items are
+  // labelled in the interface but must be deliberately donned before entry.
+  const [ppeSelected, setPpeSelected] = useState<string[]>([]);
 
   // Narrate each step on entry. Dep array gates re-runs to step/caseData
   // changes only - state changes within a step won't re-fire. StrictMode's

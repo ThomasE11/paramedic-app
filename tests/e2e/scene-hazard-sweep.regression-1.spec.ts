@@ -61,6 +61,13 @@ test('clear scene keeps the photograph unobscured and requires a deliberate swee
 
   await safe.click();
   await expect(safe).toHaveAttribute('aria-pressed', 'true');
+  await expect(enterScene).toBeDisabled();
+  for (const ppe of ['Gloves', 'N95 respirator', 'Eye protection']) {
+    const control = page.getByRole('button', { name: new RegExp(`${ppe}.*Required`, 'i') });
+    await expect(control).toHaveAttribute('aria-pressed', 'false');
+    await control.click();
+    await expect(control).toHaveAttribute('aria-pressed', 'true');
+  }
   await expect(enterScene).toBeEnabled();
   await expect(enterScene).toHaveClass(/bg-green-600/);
 });
@@ -79,12 +86,20 @@ test('hazardous scenes require every authored hotspot before entry', async ({ pa
   await expect(page.getByRole('button', { name: /Acknowledged: CHEMICAL CONTAMINATION/i })).toHaveAttribute('aria-pressed', 'true');
 
   await safe.click();
-  for (const ppe of ['Gloves', 'Surgical mask', 'Eye protection', 'Gown / apron']) {
-    await expect(page.getByRole('button', { name: new RegExp(`${ppe}.*Required`, 'i') })).toHaveAttribute('aria-pressed', 'true');
+  const requiredPpe = ['Gloves', 'Surgical mask', 'Eye protection', 'Gown / apron'];
+  for (const ppe of requiredPpe) {
+    await expect(page.getByRole('button', { name: new RegExp(`${ppe}.*Required`, 'i') })).toHaveAttribute('aria-pressed', 'false');
   }
   await expect(enterScene).toBeDisabled();
 
   await exposedWorkers.click();
   await expect(page.getByRole('button', { name: /Acknowledged: Other workers potentially affected/i })).toHaveAttribute('aria-pressed', 'true');
+  await expect(enterScene).toBeDisabled();
+
+  for (const ppe of requiredPpe) {
+    const control = page.getByRole('button', { name: new RegExp(`${ppe}.*Required`, 'i') });
+    await control.click();
+    await expect(control).toHaveAttribute('aria-pressed', 'true');
+  }
   await expect(enterScene).toBeEnabled();
 });
