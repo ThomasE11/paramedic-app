@@ -41,15 +41,26 @@ function smoothstep(edge0: number, edge1: number, value: number): number {
 }
 
 /**
- * Soft anatomical membership for the male patient's vermilion surface.
- * Geometry coordinates keep the mask on the lips; the feathered inner band
- * prevents the triangle boundary from reading as a painted plate.
+ * Broad legacy mouth-candidate envelope. Atlas-specific vermilion membership
+ * is refined below; this envelope alone also includes peri-oral skin.
  */
 export function lipCyanosisCoverage(x: number, y: number, z: number): number {
   const xWeight = 1 - smoothstep(LIP_X_FULL, LIP_X_OUTER, Math.abs(x));
   const yWeight = smoothstep(LIP_Y_MIN, LIP_Y_FULL_MIN, y)
     * (1 - smoothstep(LIP_Y_FULL_MAX, LIP_Y_MAX, y));
   const zWeight = smoothstep(LIP_Z_MIN, LIP_Z_FULL, z);
+  return Math.min(1, Math.max(0, xWeight * yWeight * zWeight));
+}
+
+/** Albedo/geometry-calibrated vermilion on the current male reference mesh.
+ * Its lip corners are ~25 mm from centre, not the 43 mm full-width candidate
+ * envelope. Keeping that broad envelope separate preserves its generic API
+ * while preventing the reference atlas from colouring the cheeks. */
+export function referenceVermilionCoverage(x: number, y: number, z: number): number {
+  const xWeight = 1 - smoothstep(.023, .028, Math.abs(x));
+  const yWeight = smoothstep(1.536, 1.538, y)
+    * (1 - smoothstep(1.5485, 1.5515, y));
+  const zWeight = smoothstep(.138, .142, z);
   return Math.min(1, Math.max(0, xWeight * yWeight * zWeight));
 }
 
@@ -84,7 +95,7 @@ export function collectContinuousLipUvTriangles(
       continue;
     }
 
-    const coverage = indices.map(vertex => lipCyanosisCoverage(
+    const coverage = indices.map(vertex => referenceVermilionCoverage(
       position.getX(vertex),
       position.getY(vertex),
       position.getZ(vertex),
