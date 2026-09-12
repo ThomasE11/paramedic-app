@@ -6,6 +6,7 @@ const seconds = Number((args.find((a) => a.startsWith('--seconds=')) ?? '--secon
 const headless = args.includes('--headless');
 const ipad = args.includes('--ipad');
 const forceDegrade = args.includes('--force-degrade');
+const assertContract = args.includes('--assert-contract');
 const modelArg = args.find((a) => a.startsWith('--model='));
 const modelQuery = modelArg ? `&model=${modelArg.split('=')[1]}` : '';
 const caseArg = args.find((a) => a.startsWith('--case='));
@@ -116,6 +117,14 @@ try {
   }, { secs: seconds, profile });
 
   console.log(JSON.stringify(result));
+  if (assertContract) {
+    if (headless) throw new Error('--assert-contract requires the hardware Chrome path; remove --headless');
+    const minimumFps = ipad ? 30 : 60;
+    if (result.avgFps < minimumFps) {
+      throw new Error(`${profile} averaged ${result.avgFps} FPS; contract requires at least ${minimumFps} FPS`);
+    }
+    console.log(`contract pass: ${profile} average ${result.avgFps} FPS >= ${minimumFps} FPS`);
+  }
 } catch (err) {
   console.error('measure failed:', err.message ?? err);
   process.exitCode = 1;
