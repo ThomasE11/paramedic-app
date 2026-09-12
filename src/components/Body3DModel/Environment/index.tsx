@@ -764,16 +764,20 @@ const SCENE_ENTRANCE_MS = ENTRANCE_MS * 2.2;
 
 export function CameraEntrance({
   active,
+  once = false,
   focus,
   controlsRef,
   origin,
 }: {
   active: boolean;
+  /** Keep case-specific bedside/exam changes from replaying the doorway dolly. */
+  once?: boolean;
   focus: { pos: [number, number, number]; target: [number, number, number] };
   controlsRef: React.RefObject<EntranceControls | null>;
   origin?: [number, number, number];
 }) {
   const gl = useThree((s) => s.gl);
+  const hasEntered = useRef(false);
   const focusRef = useRef(focus);
   focusRef.current = focus;
   const originRef = useRef<[number, number, number] | null>(null);
@@ -781,6 +785,7 @@ export function CameraEntrance({
 
   useEffect(() => {
     if (!active) return;
+    if (once && hasEntered.current) return;
     let raf = 0;
     let cancelled = false;
     const start = performance.now();
@@ -808,6 +813,7 @@ export function CameraEntrance({
         raf = requestAnimationFrame(step);
         return;
       }
+      hasEntered.current = true;
       const { pos, target } = focusRef.current;
       const origin = originRef.current;
       const duration = origin ? SCENE_ENTRANCE_MS : ENTRANCE_MS;
@@ -864,7 +870,7 @@ export function CameraEntrance({
     // the camera back to the doorway over and over while live vitals changed.
     // originRef already carries the latest coordinates without restarting the
     // entrance; only an actual active-state transition should replay it.
-  }, [active, controlsRef, gl]);
+  }, [active, controlsRef, gl, once]);
 
   return null;
 }

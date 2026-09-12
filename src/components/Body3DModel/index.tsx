@@ -52,6 +52,7 @@ import {
 import { recommendedManagementTabForCase, type ManagementTab } from '@/components/TreatmentJumpBagPanel';
 import { CLOTHING_PARTING } from './ClothingLayer';
 import { usePatientVoice } from '@/hooks/usePatientVoice';
+import { useBedsideConversation } from '@/hooks/useBedsideConversation';
 import { derivePatientCommunication, type PatientCommunicationInput } from '@/lib/patientCommunication';
 import { getNextGuidedStep, EXAM_SEQUENCE } from './bodyRegions';
 import { useTranslation } from 'react-i18next';
@@ -4971,6 +4972,7 @@ function PatientRealismStrip({
 
 export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientSounds, caseCategory, appliedTreatmentIds = [], patientVisualState = null, isInArrest = false, vitals, liveRespiration, onPulse, treatmentBayMode = false, onRequestTreat }: Body3DModelProps) {
   const { t } = useTranslation();
+  const bedsideConversation = useBedsideConversation(caseData.id);
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
   const patientFrameRef = useRef<HTMLDivElement | null>(null);
   // Surface projector emitted by BodyMesh once the patient mesh loads — used to
@@ -5138,10 +5140,21 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   // useMemo keeps the pos/target array identities stable — OrbitControls'
   // `target` prop and several useCallback deps rely on that.
   const overviewCameraFocus = useMemo(
-    () => (treatmentBayOverviewEnabled
-      ? getTreatmentBayCameraFocus(bayStage, patientPosture, patientMobility, patientScale)
-      : getUprightCameraFocus(patientScale)),
-    [treatmentBayOverviewEnabled, bayStage, patientPosture, patientMobility, patientScale],
+    () => {
+      const focus = treatmentBayOverviewEnabled
+        ? getTreatmentBayCameraFocus(bayStage, patientPosture, patientMobility, patientScale)
+        : getUprightCameraFocus(patientScale);
+      if (caseData.id === 'resp-001' && treatmentBayOverviewEnabled && (patientPosture === 'tripod' || patientPosture === 'seated')) {
+        // Orbit around the patient root, not a point 60cm behind the chair.
+        // The old target pushed the patient's head off-screen in side views.
+        const depth = getTreatmentBayTransform(bayStage, patientPosture, patientMobility, patientScale).position[2];
+        const shift = depth - focus.target[2];
+        focus.target[2] = depth;
+        focus.pos[2] += shift;
+      }
+      return focus;
+    },
+    [caseData.id, treatmentBayOverviewEnabled, bayStage, patientPosture, patientMobility, patientScale],
   );
 
   // OrbitControls target is imperative state. Initialise/reset it only for the
@@ -5457,6 +5470,26 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       );
     }
   }, [animateCamera, clearPatientReaction, overviewCameraFocus.pos, overviewCameraFocus.target]);
+
+  const wasConversing = useRef(false);
+  useEffect(() => {
+    if (bedsideConversation.active && (!faceAttachment || !controlsRef.current)) return;
+    if (bedsideConversation.active && !wasConversing.current) {
+      handleCloseRegion();
+      // Conversation is a chest-up bedside view, not a scored face exam.
+      // Use the live head frame so a leaning patient stays inside the shot.
+      if (faceAttachment && controlsRef.current) {
+        faceAttachment.updateWorldMatrix(true, false);
+        const target = new THREE.Vector3(0, 1.43, 0.06).applyMatrix4(faceAttachment.matrixWorld);
+        const direction = new THREE.Vector3(0.04, 0.08, 1).transformDirection(faceAttachment.matrixWorld);
+        const pos = target.clone().addScaledVector(direction, 2.05);
+        animateCamera(controlsRef.current, pos.toArray(), target.toArray(), 500);
+      }
+    } else if (!bedsideConversation.active && wasConversing.current) {
+      handleCloseRegion();
+    }
+    wasConversing.current = bedsideConversation.active;
+  }, [bedsideConversation.active, handleCloseRegion, faceAttachment, animateCamera]);
 
   // Esc deselects the focused region — alongside the in-frame "Full body"
   // pill and click-on-empty-space (onPointerMissed on the Canvas).
@@ -5957,7 +5990,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   };
 
   return (
-    <div ref={patientFrameRef} className="glass-panel relative rounded-2xl overflow-hidden border border-white/45 dark:border-white/[0.06] shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_40px_-16px_rgba(0,0,0,0.7)] backdrop-blur-xl">
+    <div ref={patientFrameRef} data-bedside-conversation={bedsideConversation.active || undefined} className="glass-panel relative rounded-2xl overflow-hidden border border-white/45 dark:border-white/[0.06] shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_40px_-16px_rgba(0,0,0,0.7)] backdrop-blur-xl">
       {/* Teal accent hairline — "hands on patient" phase */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-400/40 to-transparent" />
       {/* Header */}
@@ -6343,13 +6376,15 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 showPatientSeat={treatmentBayOverviewEnabled && patientSupportSurface === 'seat'}
                 shadowsEnabled={quality.contactShadows}
                 variant={bayVariant}
+                sceneProfile={caseData.id === 'resp-001' ? 'resp-001-villa' : undefined}
               />
 
               {/* Cinematic ease-in when entering the treatment bay — slight
                   pull-back + dutch tilt settling onto the preset framing.
                   Any pointer interaction cancels it instantly. */}
               <CameraEntrance
-                active={useTreatmentBayPresentation && !activeRegion}
+                active={useTreatmentBayPresentation && !activeRegion && !bedsideConversation.active}
+                once={caseData.id === 'resp-001'}
                 focus={overviewCameraFocus}
                 controlsRef={controlsRef}
                 origin={
@@ -6430,6 +6465,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 sss={qualityTier < 1}
                 // Work-of-breathing posture; eases to recovery as SpO2 climbs.
                 posture={patientPosture}
+                braceHandsOnKnees={caseData.id === 'resp-001'}
                 mobility={patientMobility}
                 // Lip-sync drive from the patient's TTS analyser.
                 mouthOpenRef={patientVoice.mouthOpenRef}
@@ -6474,7 +6510,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 patientAge={activePatientAge}
               />
 
-              <LandmarkMarkers
+              {!bedsideConversation.active && <LandmarkMarkers
                 activeRegion={activeRegion}
                 assessedRegions={assessedRegions}
                 requiredRegions={requiredRegions}
@@ -6484,7 +6520,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 sampler={surfaceSampler}
                 presentation={markerPresentation}
                 patientScale={patientScale}
-              />
+              />}
 
               {!useTreatmentBayPresentation && (
                 <>
@@ -6571,7 +6607,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
             {/* Compact list of applied equipment — labels for the on-body pins */}
             <AppliedEquipmentTray appliedTreatmentIds={appliedTreatmentIds} />
 
-            {treatmentBayOverviewEnabled && !activeRegion && (
+            {treatmentBayOverviewEnabled && !activeRegion && !bedsideConversation.active && (
               <BayKitHotspots
                 recommendedTab={recommendedManagementTabForCase(caseData)}
                 onOpenKit={onRequestTreat
@@ -6630,6 +6666,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               />
             )}
           </div>
+
+          {bedsideConversation.enabled && <aside ref={bedsideConversation.register} className="bedside-history-dock" aria-label={t('bedside.title')} />}
 
           {patientFirstExamLayout && activeRegion && (
             <PatientFirstExamDock

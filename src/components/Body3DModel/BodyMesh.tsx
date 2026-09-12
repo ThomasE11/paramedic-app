@@ -34,6 +34,7 @@ import { IdleAnimations, type IdleCues } from './IdleAnimations';
 import { getBreathPhase01, setBreathClock } from '@/lib/breathClock';
 import { computeIdleLimbMotion, createIdleLimbMotion } from '@/lib/idleLimbMotion';
 import { patientWalkingPath } from '@/lib/patientWalkingPath';
+import { tripodHandBraceSweep, TRIPOD_BRACE_CALIBRATION } from '@/lib/tripodHandBrace';
 import {
   patientSkeletalAction,
   patientArmRestRadians,
@@ -181,6 +182,8 @@ interface BodyMeshProps {
   /** Patient age in years, including decimals for infants. Selects a
    * developmentally proportioned mesh and its real-world standing height. */
   patientAge?: number;
+  /** Pilot calibrated adult tripod support without changing other rigs. */
+  braceHandsOnKnees?: boolean;
   /** Fade the surface patient when an internal anatomy reference is shown. */
   surfaceOpacity?: number;
   /** Names of finding morph targets that should be ACTIVE (revealed) — e.g.
@@ -865,7 +868,7 @@ function buildSurfaceSampler(root: THREE.Object3D | null, presentationRoot?: THR
  */
 const ASYMMETRIC_CHEST_RESIDUAL = 0.35;
 
-export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, patientAge, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, breathingEffort = 0, chestRiseUnilateral = false, breathDepthFactor = 1, onSurfaceSampler, onFaceAttachment, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, skinDiaphoretic = false, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, idleCues = null, reduceIdleMotion = false, presentation = 'upright', bayStage = 'stretcher', sss = false, posture = null, mobility = 'recumbent', mouthOpenRef = null, cyanosisLocalStrength = 0 }: BodyMeshProps) {
+export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guidedMode = false, nextGuidedStep = null, onBlockedClick, onBodyPoint, bodyInjuries, patientGender, patientAge, braceHandsOnKnees = false, surfaceOpacity = 1, activeFindingMorphs, breathRateRpm = 0, breathingEffort = 0, chestRiseUnilateral = false, breathDepthFactor = 1, onSurfaceSampler, onFaceAttachment, dressed = false, dressedActiveRegion = null, pupilLeftMm = 3.5, pupilRightMm = 3.5, skinTint = null, skinDiaphoretic = false, diaphoresis = 0, jaundice = 0, mottling = 0, unconscious = false, idleCues = null, reduceIdleMotion = false, presentation = 'upright', bayStage = 'stretcher', sss = false, posture = null, mobility = 'recumbent', mouthOpenRef = null, cyanosisLocalStrength = 0 }: BodyMeshProps) {
   // The path is recomputed per render so a `caseData.patientInfo.gender`
   // change (e.g. user picks a different case) swaps the mesh without
   // remounting the parent. useGLTF caches by URL.
@@ -1235,6 +1238,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     () => standingArmBones.map(arm => arm.quaternion.clone()),
     [standingArmBones],
   );
+  const tripodBraceRef = useRef(0);
   // Accessory recruitment is a girdle shrug, not an upper-arm wave. Mixamo's
   // LeftArm/RightArm sit distal to the clavicle; rotating them levers the
   // hands ~30 mm and reads as jitter on a tripod patient.
@@ -1573,9 +1577,13 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         braced: posture === 'tripod' || breathingEffort >= 0.5,
       }, idleLimbRef.current);
 
+      const braceTarget = tripodHandBraceSweep(braceHandsOnKnees, posture, 'right');
+      tripodBraceRef.current += (braceTarget - tripodBraceRef.current) * (1 - Math.exp(-delta * 5));
+      const braceBlend = tripodBraceRef.current / TRIPOD_BRACE_CALIBRATION.forearm;
       standingArmBones.forEach((arm, index) => {
         arm.quaternion.copy(standingArmRest[index]);
         if (armRelaxation > 0) arm.rotateX(armRelaxation);
+        arm.rotateX(braceBlend * TRIPOD_BRACE_CALIBRATION.upperArm);
         const isLeft = arm.name.toLowerCase().includes('left');
         arm.rotateX(isLeft ? idleLimb.leftArmDrift : idleLimb.rightArmDrift);
       });
@@ -1595,6 +1603,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         const side = forearm.name.toLowerCase().includes('left') ? 'left' : 'right';
         const sweep = patientForearmSweepRadians(mobility, side, patientAge);
         if (sweep !== 0) forearm.rotateZ(sweep);
+        forearm.rotateZ(side === 'left' ? -tripodBraceRef.current : tripodBraceRef.current);
         forearm.rotateX(side === 'left' ? idleLimb.leftForeArmDrift : idleLimb.rightForeArmDrift);
       });
       // Legs are otherwise static in recumbent presentations, so explicitly
@@ -1615,7 +1624,8 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         applyLocalBoneAdjustment(recoveryPoseBones.rightLeg, RECOVERY_BONE_ADJUSTMENTS.rightLeg);
       }
     }
-    const spineLean = patientSpineLeanRadians(posture, patientAge);
+    const spineLean = patientSpineLeanRadians(posture, patientAge)
+      + (tripodBraceRef.current / TRIPOD_BRACE_CALIBRATION.forearm) * TRIPOD_BRACE_CALIBRATION.spine;
     if (skeletalMixer && spineLean > 0) {
       // Mixer first, then a small additive local flex. In normal case data a
       // tripod patient is seated and has no locomotion mixer, but this keeps a

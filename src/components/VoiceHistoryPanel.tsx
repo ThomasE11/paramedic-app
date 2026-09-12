@@ -18,6 +18,10 @@
  */
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
+import { useBedsideConversation } from '@/hooks/useBedsideConversation';
+import './bedsideConversation.css';
 import type { CaseScenario, VitalSigns } from '@/types';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { usePatientVoice } from '@/hooks/usePatientVoice';
@@ -74,6 +78,21 @@ interface VoiceHistoryPanelProps {
 }
 
 export function VoiceHistoryPanel({ caseData, currentVitals, isInArrest, appliedTreatmentIds, isActive = true, onCategoryObtained, footer }: VoiceHistoryPanelProps) {
+  const { t } = useTranslation();
+  const { target, setActive } = useBedsideConversation(caseData.id);
+  const bedside = Boolean(target && isActive);
+  useEffect(() => {
+    setActive(bedside);
+    // Wait for the scene's dock layout to commit before measuring its top.
+    // A smooth scroll races input focus and can scroll the patient away.
+    const frame = bedside ? window.requestAnimationFrame(() => {
+      target?.closest('.patient-model-canvas-shell')?.scrollIntoView({ block: 'start', behavior: 'instant' });
+    }) : null;
+    return () => {
+      if (frame !== null) window.cancelAnimationFrame(frame);
+      setActive(false);
+    };
+  }, [bedside, setActive, target]);
   const patientVoice = usePatientVoice(caseData, { vitals: currentVitals, isInArrest, appliedTreatmentIds });
   const [turns, setTurns] = useState<HistoryTurn[]>([]);
   const [obtained, setObtained] = useState<Set<HistoryCategory>>(new Set());
@@ -232,16 +251,21 @@ export function VoiceHistoryPanel({ caseData, currentVitals, isInArrest, applied
   }, [patientVoice.canVocalize, canAskBystander, turns.length, caseData]);
 
   const sampleCovered = SAMPLE_CATEGORIES.filter(c => obtained.has(c));
+  const lastPatientAnswer = [...turns].reverse().find(turn => turn.role === 'patient');
+  const playbackLabel = !patientVoice.enabled ? 'muted'
+    : patientVoice.playbackStatus === 'loading' ? 'loading'
+    : patientVoice.playbackStatus === 'error' ? 'error'
+    : patientVoice.isSpeaking ? 'speaking' : 'ready';
 
-  return (
-    <Card className="min-w-0 w-full border border-border/60 bg-card overflow-hidden" data-history-panel="true">
+  const panel = (
+    <Card className={`min-w-0 w-full border border-border/60 bg-card overflow-hidden ${bedside ? 'bedside-history-panel' : ''}`} data-history-panel="true">
       <CardHeader className="p-3 border-b border-border/40">
         <div className="flex min-w-0 flex-col items-start gap-3">
           <CardTitle className="flex min-w-0 items-center gap-2 text-sm leading-snug">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/15">
               <MessageCircle className="h-4 w-4 text-blue-500" />
             </div>
-            History Taking — {askTarget === 'bystander' && canAskBystander ? 'Ask a Bystander' : 'Ask the Patient'}
+            {bedside ? t('bedside.title') : <>History Taking — {askTarget === 'bystander' && canAskBystander ? 'Ask a Bystander' : 'Ask the Patient'}</>}
           </CardTitle>
           <div className="flex w-full flex-wrap items-center justify-between gap-2">
             {canAskBystander && (
@@ -274,10 +298,10 @@ export function VoiceHistoryPanel({ caseData, currentVitals, isInArrest, applied
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="border-b border-border/40 px-4 py-2 flex items-center justify-between gap-3 text-xs text-slate-300" role="status">
+        <div className="border-b border-border/40 px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300" role="status">
           <p>{patientVoice.communication.status}</p>
           <p className="shrink-0 text-[10px] uppercase tracking-[0.14em] text-slate-400">
-            Asking {askTarget === 'bystander' && canAskBystander ? (canAskBystander ? pickCollateralVoice(caseData.sceneInfo?.bystanders ?? '') : 'bystander') : 'patient'} · {askTarget === 'bystander' && canAskBystander ? 'not spoken' : patientVoice.canVocalize ? 'spoken' : 'not spoken'}
+            {askTarget === 'bystander' && canAskBystander ? t('bedside.written') : t(`bedside.${playbackLabel}`)}
           </p>
         </div>
         {/* Coverage chips */}
@@ -303,17 +327,17 @@ export function VoiceHistoryPanel({ caseData, currentVitals, isInArrest, applied
           role="log"
           aria-label="Patient history conversation"
           aria-live="polite"
-          className="px-4 py-4 min-h-[260px] max-h-[420px] overflow-y-auto space-y-3 bg-slate-900/40"
+          className={`history-transcript px-4 py-4 overflow-y-auto space-y-3 bg-slate-900/40 ${bedside ? 'min-h-0' : 'min-h-[260px] max-h-[420px]'}`}
         >
           {turns.length === 0 && !voice.isListening && !voice.interimTranscript && (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className={`flex flex-col items-center justify-center text-center ${bedside ? 'py-1' : 'py-8'}`}>
               <History className="h-8 w-8 text-slate-400 mb-2" />
               <p className="text-sm font-medium text-slate-200 dark:text-slate-100 max-w-md leading-relaxed">
                 {askTarget === 'bystander' && canAskBystander
                   ? 'Ask the bystander what they saw, when it started, and what they know about the patient.'
-                  : "Press the mic and ask the patient a history question — anything you'd ask in real practice. The patient will answer in their own voice."}
+                  : bedside ? t('bedside.prompt') : "Press the mic and ask the patient a history question — anything you'd ask in real practice. The patient will answer in their own voice."}
               </p>
-              <p className="text-[11px] text-slate-300 mt-3">
+              <p className={`text-[11px] text-slate-300 mt-3 ${bedside ? 'hidden' : ''}`}>
                 Try: <em>"What medications do you take?"</em> · <em>"Any allergies?"</em> ·
                 <em>"What were you doing when this started?"</em>
               </p>
@@ -406,6 +430,16 @@ export function VoiceHistoryPanel({ caseData, currentVitals, isInArrest, applied
 
         {/* Mic + typed-input bar */}
         <div className="px-3 py-3 flex min-w-0 flex-col items-stretch gap-2 bg-card">
+          {bedside && <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" variant="outline" onClick={patientVoice.toggleEnabled} className="h-9 text-xs">
+              <Volume2 className="mr-1 h-3 w-3" />{t(patientVoice.enabled ? 'bedside.mute' : 'bedside.enable')}
+            </Button>
+            <Button size="sm" variant="outline" className="h-9 text-xs"
+              disabled={!lastPatientAnswer || !patientVoice.enabled || !patientVoice.canVocalize || askTarget !== 'patient'}
+              onClick={() => { if (lastPatientAnswer) patientVoice.say(lastPatientAnswer.text); }}>
+              {t('bedside.replay')}
+            </Button>
+          </div>}
           <Button
             onClick={() => {
               if (answerTimer.current) clearTimeout(answerTimer.current);
@@ -428,6 +462,7 @@ export function VoiceHistoryPanel({ caseData, currentVitals, isInArrest, applied
           >
             <input
               type="text"
+              aria-label={t('bedside.question')}
               value={typed}
               onChange={(e) => setTyped(e.target.value)}
               placeholder='e.g. "Any allergies?" · "Where is the pain?" · "What happened?"'
@@ -457,4 +492,5 @@ export function VoiceHistoryPanel({ caseData, currentVitals, isInArrest, applied
       </CardContent>
     </Card>
   );
+  return bedside && target ? createPortal(panel, target) : panel;
 }

@@ -1,0 +1,45 @@
+.bedside-history-dock:empty { display: none; }
+.bedside-history-dock { min-width: 0; overflow: auto; background: #101e2c; }
+.bedside-history-panel { border-radius: 0; height: auto; padding: 0; gap: 0; color: #eef5fa; background: #101e2c; }
+.bedside-history-panel > div:last-child { display: flex; flex-direction: column; min-height: 0; }
+.bedside-history-panel > div:last-child > :not(.history-transcript) { flex-shrink: 0; }
+.bedside-history-panel .history-transcript { height: 9rem; flex: 1 1 auto; }
+.bedside-history-panel [role="log"] > div > div { max-width: 90%; }
+.bedside-history-panel [role="log"] p { color: inherit; }
+.bedside-history-panel input { color: #f1f5f9; }
+.bedside-history-panel input::placeholder { color: #9aabbc; }
+.tactical-patient-viewport:has([data-bedside-conversation]) .tactical-viewport-label,
+.tactical-patient-viewport:has([data-bedside-conversation]) .tactical-reticle,
+.tactical-patient-viewport:has([data-bedside-conversation]) .tactical-equipment-ribbon.is-empty,
+[data-bedside-conversation] .bay-kit-hotspots,
+[data-bedside-conversation] .patient-observe-quick-actions { display: none; }
+.bedside-history-panel > div:first-child { padding: .65rem .8rem; }
+.bedside-history-panel > div:first-child > div { gap: .4rem; }
+.bedside-history-panel [role="log"] > div:first-child > svg { display: none; }
+
+/* The pilot keeps a single transcript beside (not on top of) the patient.
+   Narrow screens use a compact stacked dock; controls remain in normal flow. */
+.tactical-patient-viewport [data-bedside-conversation] .patient-model-canvas-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  height: auto;
+}
+.tactical-patient-viewport [data-bedside-conversation] .patient-model-canvas-stage {
+  min-height: 18rem;
+  height: 36vh;
+}
+.tactical-patient-viewport [data-bedside-conversation] .patient-first-exam-dock { grid-column: 1 / -1; }
+
+@media (min-width: 1200px) {
+  .tactical-patient-viewport [data-bedside-conversation] .patient-model-canvas-shell {
+    grid-template-columns: minmax(0, 1.25fr) minmax(19rem, 1fr);
+    min-height: 34rem;
+    height: min(74vh, 46rem);
+  }
+  .tactical-patient-viewport [data-bedside-conversation] .patient-model-canvas-stage {
+    height: 100%;
+  }
+  .bedside-history-panel { display: flex; flex-direction: column; height: 100%; }
+  .bedside-history-panel > div:last-child { flex: 1; }
+}
