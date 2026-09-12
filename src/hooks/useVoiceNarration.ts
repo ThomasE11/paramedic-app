@@ -30,6 +30,37 @@ import type { MutableRefObject } from 'react';
 
 const VOICE_PREF_KEY = 'paramedic-studio-voice-enabled';
 
+function readStoredVoiceEnabled(): boolean {
+  try {
+    const stored = localStorage.getItem(VOICE_PREF_KEY);
+    return stored === null ? true : stored === 'true';
+  } catch {
+    return true;
+  }
+}
+
+let globalVoiceEnabled = readStoredVoiceEnabled();
+const globalVoiceEnabledListeners = new Set<(enabled: boolean) => void>();
+
+export function getVoiceEnabledPreference(): boolean {
+  return globalVoiceEnabled;
+}
+
+export function subscribeVoiceEnabledPreference(listener: (enabled: boolean) => void): () => void {
+  globalVoiceEnabledListeners.add(listener);
+  listener(globalVoiceEnabled);
+  return () => { globalVoiceEnabledListeners.delete(listener); };
+}
+
+export function setVoiceEnabledPreference(next: boolean): void {
+  globalVoiceEnabled = next;
+  try {
+    localStorage.setItem(VOICE_PREF_KEY, String(next));
+  } catch { /* ignore */ }
+  globalVoiceEnabledListeners.forEach(listener => listener(next));
+  if (!next) stopNarrationSession();
+}
+
 // Supertonic local server (dev only). We use the NATIVE /v1/tts endpoint
 // (not /v1/audio/speech) because only the native route exposes `steps` —
 // the diffusion step count that dominates latency. Measured on this machine:
@@ -91,6 +122,28 @@ function ensureUnlockListeners(): void {
   }
 }
 
+export type MediaPlaybackAttempt = 'playing' | 'error' | 'cancelled';
+
+export async function playAudioWithRetry(
+  audio: Pick<HTMLAudioElement, 'play'>,
+  isCurrent: () => boolean,
+): Promise<MediaPlaybackAttempt> {
+  try {
+    await audio.play();
+    return isCurrent() ? 'playing' : 'cancelled';
+  } catch {
+    attemptAudioUnlock();
+    await new Promise(resolve => setTimeout(resolve, 120));
+    if (!isCurrent()) return 'cancelled';
+    try {
+      await audio.play();
+      return isCurrent() ? 'playing' : 'cancelled';
+    } catch {
+      return isCurrent() ? 'error' : 'cancelled';
+    }
+  }
+}
+
 // --- Global playback arbitration -------------------------------------------
 // Several surfaces call useVoiceNarration independently: dispatch replay,
 // SceneSurveyPanel, patient reactions, and generic NarrationButton instances.
@@ -98,16 +151,56 @@ function ensureUnlockListeners(): void {
 // HTMLAudioElement objects. If those are stored per-hook, each surface can
 // pause only its own audio, which lets dispatch and scene narration overlap.
 // These module-level refs make narration a single shared lane across the app.
+export type VoiceRole = 'dispatcher' | 'patient' | 'narrator';
+export type VoicePlaybackStatus = 'idle' | 'loading' | 'speaking' | 'error';
+export interface PatientVoiceProfile {
+  gender?: 'male' | 'female';
+}
+
+interface VoicePlaybackState {
+  sessionId: number;
+  role: VoiceRole | null;
+  status: VoicePlaybackStatus;
+}
+
 let globalVoiceSessionId = 0;
 let globalActiveAudio: HTMLAudioElement | null = null;
 let globalQueueTimers: number[] = [];
 let globalIsSpeaking = false;
 let globalSyntheticMouthActive = false;
+let globalPlaybackState: VoicePlaybackState = {
+  sessionId: globalVoiceSessionId,
+  role: null,
+  status: 'idle',
+};
 const globalSpeakingListeners = new Set<(speaking: boolean) => void>();
+const globalPlaybackListeners = new Set<(state: VoicePlaybackState) => void>();
+
+export function derivePlaybackSignals(
+  status: VoicePlaybackStatus,
+  role: VoiceRole | null,
+): { busy: boolean; audiblePatient: boolean } {
+  return {
+    busy: status === 'loading' || status === 'speaking',
+    audiblePatient: status === 'speaking' && role === 'patient',
+  };
+}
 
 function setGlobalSpeaking(next: boolean): void {
   globalIsSpeaking = next;
   globalSpeakingListeners.forEach(listener => listener(next));
+}
+
+function publishPlaybackState(next: VoicePlaybackState): void {
+  globalPlaybackState = next;
+  setGlobalSpeaking(derivePlaybackSignals(next.status, next.role).busy);
+  globalPlaybackListeners.forEach(listener => listener(next));
+  startMouthLoop();
+}
+
+function setCurrentPlaybackStatus(sessionId: number, status: VoicePlaybackStatus): void {
+  if (!isCurrentNarrationSession(sessionId)) return;
+  publishPlaybackState({ ...globalPlaybackState, sessionId, status });
 }
 
 function clearGlobalQueueTimers(): void {
@@ -137,17 +230,17 @@ function stopCurrentPlayback(): void {
   clearGlobalQueueTimers();
 }
 
-function startNarrationSession(): number {
+function startNarrationSession(role: VoiceRole): number {
   globalVoiceSessionId += 1;
   stopCurrentPlayback();
-  setGlobalSpeaking(true);
+  publishPlaybackState({ sessionId: globalVoiceSessionId, role, status: 'loading' });
   return globalVoiceSessionId;
 }
 
 function stopNarrationSession(): void {
   globalVoiceSessionId += 1;
   stopCurrentPlayback();
-  setGlobalSpeaking(false);
+  publishPlaybackState({ sessionId: globalVoiceSessionId, role: null, status: 'idle' });
 }
 
 function isCurrentNarrationSession(sessionId: number): boolean {
@@ -201,6 +294,18 @@ export function fallbackSpeechMouthTarget(timeSeconds: number): number {
   return 0.055 + Math.pow(syllable, 1.25) * phrase * 0.62;
 }
 
+export function mouthTargetForPlayback(
+  status: VoicePlaybackStatus,
+  role: VoiceRole | null,
+  source: 'analysed-audio' | 'web-speech',
+  timeSeconds: number,
+  rms: number,
+): number {
+  if (!derivePlaybackSignals(status, role).audiblePatient) return 0;
+  if (source === 'web-speech') return fallbackSpeechMouthTarget(timeSeconds);
+  return Math.min(1, Math.max(0, Number.isFinite(rms) ? rms : 0) * 5.5);
+}
+
 function ensureAudioGraph(): boolean {
   if (typeof window === 'undefined') return false;
   const Ctor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -243,10 +348,18 @@ function attachAnalyser(audio: HTMLAudioElement): void {
 function startMouthLoop(): void {
   if (rafId !== null || typeof window === 'undefined') return;
   const tick = () => {
-    if (globalSyntheticMouthActive && globalIsSpeaking) {
-      const target = fallbackSpeechMouthTarget(performance.now() / 1000);
+    const { status, role } = globalPlaybackState;
+    const patientIsAudible = derivePlaybackSignals(status, role).audiblePatient;
+    if (globalSyntheticMouthActive && patientIsAudible) {
+      const target = mouthTargetForPlayback(
+        status,
+        role,
+        'web-speech',
+        performance.now() / 1000,
+        0,
+      );
       globalMouthOpen += (target - globalMouthOpen) * 0.32;
-    } else if (globalAnalyser && analyserData && globalIsSpeaking) {
+    } else if (globalAnalyser && analyserData && patientIsAudible) {
       globalAnalyser.getByteTimeDomainData(analyserData);
       let sumSq = 0;
       for (let i = 0; i < analyserData.length; i++) {
@@ -254,21 +367,28 @@ function startMouthLoop(): void {
         sumSq += v * v;
       }
       const rms = Math.sqrt(sumSq / analyserData.length); // ~0..1
-      // Scale up (speech RMS is small) and clamp, then EMA-smooth.
-      // Gain is intentionally hot so jaw travel reads at conversational distance.
-      let target = Math.min(1, rms * 5.5);
-      // Autoplay / decode can leave the media element silent while
-      // globalIsSpeaking stays true — fall back to the syllabic envelope so
-      // viseme_open still animates in time with the "speaking" state.
-      if (target < 0.03) {
-        target = fallbackSpeechMouthTarget(performance.now() / 1000);
-      }
+      // Cloud/local clips use only measured audio energy. Silence stays shut;
+      // the approximate syllabic envelope is reserved for Web Speech because
+      // its samples cannot be connected to an analyser.
+      const target = mouthTargetForPlayback(
+        status,
+        role,
+        'analysed-audio',
+        performance.now() / 1000,
+        rms,
+      );
       globalMouthOpen += (target - globalMouthOpen) * 0.35;
+    } else if (!patientIsAudible) {
+      // Role changes, synthesis latency, inter-chunk gaps, errors and explicit
+      // cancellation must never leak residual movement into the patient jaw.
+      globalMouthOpen = 0;
     } else {
-      globalMouthOpen += (0 - globalMouthOpen) * 0.35; // ease shut when idle
+      // Patient audio is playing but this browser could not expose samples.
+      globalMouthOpen += (0 - globalMouthOpen) * 0.35;
     }
     mouthOpenListeners.forEach(ref => { ref.current = globalMouthOpen; });
-    if (globalIsSpeaking || globalMouthOpen > 0.01) {
+    if (derivePlaybackSignals(globalPlaybackState.status, globalPlaybackState.role).busy
+      || globalMouthOpen > 0.01) {
       rafId = window.requestAnimationFrame(tick);
     } else {
       rafId = null;
@@ -277,16 +397,23 @@ function startMouthLoop(): void {
   rafId = window.requestAnimationFrame(tick);
 }
 
-type VoiceRole = 'dispatcher' | 'patient' | 'narrator';
-
 const SUPERTONIC_VOICE_BY_ROLE: Record<VoiceRole, string> = {
   dispatcher: 'M2',
   patient: 'F1',
   narrator: 'F2',
 };
 
-interface SpeakOptions {
+export function resolveSupertonicVoice(
+  role: VoiceRole,
+  patientVoice?: PatientVoiceProfile,
+): string {
+  if (role === 'patient' && patientVoice?.gender === 'male') return 'M1';
+  return SUPERTONIC_VOICE_BY_ROLE[role];
+}
+
+export interface SpeakOptions {
   role?: VoiceRole;
+  patientVoice?: PatientVoiceProfile;
   rate?: number;
   pitch?: number;
   onEnd?: () => void;
@@ -364,6 +491,27 @@ const HIGH_QUALITY_VOICES: Record<VoiceRole, string[]> = {
     'Microsoft Sonia Online (Natural)',
   ],
 };
+
+const HIGH_QUALITY_MALE_PATIENT_VOICES = [
+  'Daniel (Enhanced)', 'Daniel',
+  'Oliver (Enhanced)', 'Oliver',
+  'Alex',
+  'Arthur',
+  'Gordon',
+  'Google UK English Male',
+  'Microsoft Ryan Online (Natural)',
+  'Microsoft Guy Online (Natural)',
+  'Microsoft George',
+];
+
+export function voicePriorityForRole(
+  role: VoiceRole,
+  patientVoice?: PatientVoiceProfile,
+): readonly string[] {
+  return role === 'patient' && patientVoice?.gender === 'male'
+    ? HIGH_QUALITY_MALE_PATIENT_VOICES
+    : HIGH_QUALITY_VOICES[role];
+}
 
 // macOS novelty voices — unlistenable for clinical narration.
 const VOICE_BLACKLIST = /^(fred|albert|zarvox|bad news|good news|bahh|bells|boing|bubbles|cellos|deranged|hysterical|jester|junior|kathy|organ|pipe organ|princess|ralph|trinoids|whisper|wobble|superstar|grandma|grandpa|shelley|sandy|rocko|reed|eddy|flo)\b/i;
@@ -530,14 +678,8 @@ function probeElevenLabs(): Promise<boolean> {
 export function useVoiceNarration() {
   const [voicesReady, setVoicesReady] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(globalIsSpeaking);
-  const [enabled, setEnabled] = useState<boolean>(() => {
-    try {
-      const stored = localStorage.getItem(VOICE_PREF_KEY);
-      return stored === null ? true : stored === 'true';
-    } catch {
-      return true;
-    }
-  });
+  const [playbackState, setPlaybackState] = useState(globalPlaybackState);
+  const [enabled, setEnabled] = useState(globalVoiceEnabled);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   // Per-frame lip-sync amplitude (0..1), written by the shared analyser loop.
   const mouthOpenRef = useRef(0);
@@ -545,6 +687,34 @@ export function useVoiceNarration() {
     const ref = mouthOpenRef;
     mouthOpenListeners.add(ref);
     return () => { mouthOpenListeners.delete(ref); };
+  }, []);
+
+  useEffect(() => {
+    const listener = (state: VoicePlaybackState) => setPlaybackState(state);
+    globalPlaybackListeners.add(listener);
+    setPlaybackState(globalPlaybackState);
+    return () => {
+      globalPlaybackListeners.delete(listener);
+    };
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = subscribeVoiceEnabledPreference(setEnabled);
+    // The module may have first loaded during SSR, before localStorage existed.
+    // Reconcile once on mount, then propagate same-tab changes through the
+    // module listener set and cross-tab changes through the storage event.
+    const stored = readStoredVoiceEnabled();
+    if (stored !== globalVoiceEnabled) setVoiceEnabledPreference(stored);
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== VOICE_PREF_KEY || event.newValue === null) return;
+      const next = event.newValue === 'true';
+      if (next !== globalVoiceEnabled) setVoiceEnabledPreference(next);
+    };
+    if (typeof window !== 'undefined') window.addEventListener('storage', onStorage);
+    return () => {
+      unsubscribe();
+      if (typeof window !== 'undefined') window.removeEventListener('storage', onStorage);
+    };
   }, []);
 
   // Attach the one-time audio-unlock gesture listeners as early as possible
@@ -583,21 +753,17 @@ export function useVoiceNarration() {
   }, []);
 
   const toggleEnabled = useCallback(() => {
-    setEnabled(prev => {
-      const next = !prev;
-      try {
-        localStorage.setItem(VOICE_PREF_KEY, String(next));
-      } catch { /* ignore */ }
-      if (!next) stopNarrationSession();
-      return next;
-    });
+    setVoiceEnabledPreference(!globalVoiceEnabled);
   }, []);
 
   /**
    * Pick the best voice for a given role using an explicit priority list,
    * then fall back to generic heuristics. Novelty voices are blacklisted.
    */
-  const pickVoice = useCallback((role: VoiceRole): SpeechSynthesisVoice | null => {
+  const pickVoice = useCallback((
+    role: VoiceRole,
+    patientVoice?: PatientVoiceProfile,
+  ): SpeechSynthesisVoice | null => {
     const voices = voicesRef.current;
     if (voices.length === 0) return null;
 
@@ -629,7 +795,7 @@ export function useVoiceNarration() {
     const pool = englishVoices.length > 0 ? englishVoices : usable;
 
     // 1. Walk explicit priority list for this role
-    const priorityList = HIGH_QUALITY_VOICES[role];
+    const priorityList = voicePriorityForRole(role, patientVoice);
     for (const name of priorityList) {
       const match = pool.find(v => v.name === name);
       if (match) return match;
@@ -658,7 +824,11 @@ export function useVoiceNarration() {
    * <audio> element ready to play, or null on failure). Kept separate so the
    * speak loop can PREFETCH the next sentence while the current one plays.
    */
-  const synthSentence = useCallback(async (text: string, role: VoiceRole): Promise<HTMLAudioElement | null> => {
+  const synthSentence = useCallback(async (
+    text: string,
+    role: VoiceRole,
+    patientVoice?: PatientVoiceProfile,
+  ): Promise<HTMLAudioElement | null> => {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), SUPERTONIC_TIMEOUT_MS);
     try {
@@ -667,7 +837,7 @@ export function useVoiceNarration() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text,
-          voice: SUPERTONIC_VOICE_BY_ROLE[role],
+          voice: resolveSupertonicVoice(role, patientVoice),
           lang: docLangForSupertonic(),
           steps: SUPERTONIC_STEPS,
         }),
@@ -698,6 +868,7 @@ export function useVoiceNarration() {
     normalised: string,
     role: VoiceRole,
     mySession: number,
+    patientVoice?: PatientVoiceProfile,
     onEnd?: () => void,
   ): Promise<boolean> => {
     const reachable = await probeSupertonic();
@@ -720,7 +891,7 @@ export function useVoiceNarration() {
 
     // Synthesise the first sentence up front. If even this fails, the server
     // is effectively unusable for this utterance → allow Web Speech fallback.
-    let current = await synthSentence(sentences[0], role);
+    let current = await synthSentence(sentences[0], role, patientVoice);
     if (!current) return false;
     if (!isCurrentNarrationSession(mySession)) return true;
 
@@ -731,31 +902,49 @@ export function useVoiceNarration() {
         const audio = current!;
         // Kick off synth of the NEXT sentence while this one plays.
         const nextPromise = i + 1 < sentences.length
-          ? synthSentence(sentences[i + 1], role)
+          ? synthSentence(sentences[i + 1], role, patientVoice)
           : Promise.resolve(null);
 
         setActiveAudio(audio);
-        await new Promise<void>((resolve) => {
+        const completion = new Promise<'ended' | 'error'>((resolve) => {
           let settled = false;
-          const done = () => { if (!settled) { settled = true; try { URL.revokeObjectURL(audio.src); } catch {} resolve(); } };
-          audio.onended = done;
-          audio.onerror = done;
-          audio.play().catch(async () => {
-            // Autoplay blocked — unlock + one retry; never fall to robotic.
-            attemptAudioUnlock();
-            await new Promise(r => setTimeout(r, 120));
-            if (!isCurrentNarrationSession(mySession)) { done(); return; }
-            audio.play().catch(() => done());
-          });
+          const done = (outcome: 'ended' | 'error') => {
+            if (settled) return;
+            settled = true;
+            resolve(outcome);
+          };
+          audio.onended = () => done('ended');
+          audio.onerror = () => done('error');
         });
 
+        const playResult = await playAudioWithRetry(
+          audio,
+          () => isCurrentNarrationSession(mySession),
+        );
+        if (playResult === 'cancelled') return;
+        if (playResult === 'error') {
+          try { URL.revokeObjectURL(audio.src); } catch { /* ignore */ }
+          if (globalActiveAudio === audio) globalActiveAudio = null;
+          setCurrentPlaybackStatus(mySession, 'error');
+          return;
+        }
+        setCurrentPlaybackStatus(mySession, 'speaking');
+        const completionResult = await completion;
+        try { URL.revokeObjectURL(audio.src); } catch { /* ignore */ }
+        if (globalActiveAudio === audio) globalActiveAudio = null;
+
         if (!isCurrentNarrationSession(mySession)) return;
+        if (completionResult === 'error') {
+          setCurrentPlaybackStatus(mySession, 'error');
+          return;
+        }
+        if (i + 1 < sentences.length) setCurrentPlaybackStatus(mySession, 'loading');
         current = await nextPromise;
         if (!current) break; // a later sentence failed to synth — stop cleanly
       }
       if (isCurrentNarrationSession(mySession)) {
         if (globalActiveAudio) globalActiveAudio = null;
-        setGlobalSpeaking(false);
+        setCurrentPlaybackStatus(mySession, 'idle');
         onEnd?.();
       }
     })();
@@ -774,14 +963,14 @@ export function useVoiceNarration() {
     options: SpeakOptions,
   ) => {
     const profile = ROLE_PROFILES[role];
-    const voice = pickVoice(role);
+    const voice = pickVoice(role, options.patientVoice);
     const chunks = chunkText(normalised);
 
     let chunkIndex = 0;
     const speakNext = () => {
       if (!isCurrentNarrationSession(mySession)) return;
       if (chunkIndex >= chunks.length) {
-        setGlobalSpeaking(false);
+        setCurrentPlaybackStatus(mySession, 'idle');
         options.onEnd?.();
         return;
       }
@@ -800,12 +989,14 @@ export function useVoiceNarration() {
       utterance.onstart = () => {
         if (!isCurrentNarrationSession(mySession)) return;
         globalSyntheticMouthActive = true;
+        setCurrentPlaybackStatus(mySession, 'speaking');
         startMouthLoop();
       };
 
       utterance.onend = () => {
         if (!isCurrentNarrationSession(mySession)) return;
         globalSyntheticMouthActive = false;
+        setCurrentPlaybackStatus(mySession, 'loading');
         const gap = chunk.terminal ? profile.interSentenceGapMs : profile.interClauseGapMs;
         const gapWithJitter = gap + Math.random() * 80 - 40;
         const t = window.setTimeout(speakNext, Math.max(30, gapWithJitter));
@@ -814,11 +1005,15 @@ export function useVoiceNarration() {
       utterance.onerror = () => {
         if (!isCurrentNarrationSession(mySession)) return;
         globalSyntheticMouthActive = false;
-        const t = window.setTimeout(speakNext, 60);
-        registerQueueTimer(t);
+        setCurrentPlaybackStatus(mySession, 'error');
       };
 
-      window.speechSynthesis.speak(utterance);
+      try {
+        window.speechSynthesis.speak(utterance);
+      } catch {
+        globalSyntheticMouthActive = false;
+        setCurrentPlaybackStatus(mySession, 'error');
+      }
     };
 
     speakNext();
@@ -836,6 +1031,7 @@ export function useVoiceNarration() {
     normalised: string,
     role: VoiceRole,
     mySession: number,
+    patientVoice?: PatientVoiceProfile,
     onEnd?: () => void,
   ): Promise<boolean> => {
     const configured = await probeElevenLabs();
@@ -849,7 +1045,7 @@ export function useVoiceNarration() {
       const res = await fetch(TTS_PROXY_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: normalised, role }),
+        body: JSON.stringify({ text: normalised, role, patientVoice }),
         signal: ctrl.signal,
       });
       clearTimeout(timer);
@@ -863,21 +1059,21 @@ export function useVoiceNarration() {
 
     const audio = new Audio(URL.createObjectURL(blob));
     setActiveAudio(audio); // shared "current audio" ref for stop()/interrupt
-    const finish = () => {
+    let finished = false;
+    const finish = (status: 'idle' | 'error') => {
       if (!isCurrentNarrationSession(mySession)) return;
+      if (finished) return;
+      finished = true;
       try { URL.revokeObjectURL(audio.src); } catch { /* ignore */ }
       if (globalActiveAudio === audio) globalActiveAudio = null;
-      setGlobalSpeaking(false);
-      onEnd?.();
+      setCurrentPlaybackStatus(mySession, status);
+      if (status === 'idle') onEnd?.();
     };
-    audio.onended = finish;
-    audio.onerror = finish;
-    audio.play().catch(async () => {
-      // Autoplay blocked — unlock + one retry; never regress to chunked.
-      attemptAudioUnlock();
-      await new Promise(r => setTimeout(r, 120));
-      if (!isCurrentNarrationSession(mySession)) return;
-      audio.play().catch(() => { /* leave silent rather than fall back mid-play */ });
+    audio.onended = () => finish('idle');
+    audio.onerror = () => finish('error');
+    playAudioWithRetry(audio, () => isCurrentNarrationSession(mySession) && !finished).then(result => {
+      if (result === 'playing') setCurrentPlaybackStatus(mySession, 'speaking');
+      if (result === 'error') finish('error');
     });
     return true;
   }, []);
@@ -887,7 +1083,7 @@ export function useVoiceNarration() {
    * Engine priority: ElevenLabs → Supertonic → Web Speech.
    */
   const speak = useCallback((text: string, options: SpeakOptions = {}) => {
-    if (!enabled) return;
+    if (!globalVoiceEnabled) return;
     if (typeof window === 'undefined') return;
     if (!text || !text.trim()) return;
 
@@ -896,25 +1092,25 @@ export function useVoiceNarration() {
 
     // Cancel any ongoing dispatch, scene narration, patient voice, or generic
     // narration before starting the new utterance.
-    const mySession = startNarrationSession();
+    const mySession = startNarrationSession(role);
 
     // Engine priority: ElevenLabs (fast, continuous) → Supertonic (local) →
     // Web Speech (always available). Each returns false only if it can't own
     // the narration, so the chain falls through cleanly with no double-play.
-    speakViaElevenLabs(normalised, role, mySession, options.onEnd).then(elOk => {
+    speakViaElevenLabs(normalised, role, mySession, options.patientVoice, options.onEnd).then(elOk => {
       if (elOk) return;
       if (!isCurrentNarrationSession(mySession)) return;
-      return speakViaSupertonic(normalised, role, mySession, options.onEnd).then(ok => {
+      return speakViaSupertonic(normalised, role, mySession, options.patientVoice, options.onEnd).then(ok => {
         if (ok) return;
         if (!isCurrentNarrationSession(mySession)) return; // superseded
         if (!('speechSynthesis' in window)) {
-          setGlobalSpeaking(false);
+          setCurrentPlaybackStatus(mySession, 'error');
           return;
         }
         speakViaWebSpeech(normalised, role, mySession, options);
       });
     });
-  }, [enabled, speakViaElevenLabs, speakViaSupertonic, speakViaWebSpeech]);
+  }, [speakViaElevenLabs, speakViaSupertonic, speakViaWebSpeech]);
 
   const stop = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -927,6 +1123,9 @@ export function useVoiceNarration() {
     speak,
     stop,
     isSpeaking,
+    /** Precise shared-lane lifecycle; unlike isSpeaking, loading is not audible. */
+    playbackStatus: playbackState.status,
+    playbackRole: playbackState.role,
     enabled,
     toggleEnabled,
     isSupported,

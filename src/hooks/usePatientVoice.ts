@@ -23,6 +23,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { CaseScenario } from '@/types';
 import { useVoiceNarration } from '@/hooks/useVoiceNarration';
+import type { PatientVoiceProfile } from '@/hooks/useVoiceNarration';
 import { derivePatientCommunication, type PatientCommunicationInput } from '@/lib/patientCommunication';
 
 /** Kinds of provocative-exam reactions the body scene can request. */
@@ -50,6 +51,11 @@ function pickLine(lines: string[]): string {
   return lines[Math.floor(Math.random() * lines.length)];
 }
 
+/** Keep voice identity overrides tied to a named realism slice. */
+export function patientVoiceProfileForCase(caseId: string): PatientVoiceProfile | undefined {
+  return caseId === 'resp-001' ? { gender: 'male' } : undefined;
+}
+
 /**
  * Derive whether the patient is physiologically able to speak. Mirrors the
  * canVocalize rule used by the 3D body scene so the two surfaces stay in sync.
@@ -58,6 +64,10 @@ export function usePatientVoice(caseData: CaseScenario, live: PatientCommunicati
   const narration = useVoiceNarration();
   const communication = derivePatientCommunication(caseData, live);
   const { canVocalize } = communication;
+  const voiceProfile = patientVoiceProfileForCase(caseData.id);
+  const playbackStatus = narration.playbackRole === 'patient'
+    ? narration.playbackStatus
+    : 'idle';
   const stopRef = useRef(narration.stop);
   useEffect(() => { stopRef.current = narration.stop; }, [narration.stop]);
   useEffect(() => {
@@ -68,8 +78,8 @@ export function usePatientVoice(caseData: CaseScenario, live: PatientCommunicati
   const say = useCallback((text: string) => {
     if (!canVocalize) return;
     if (!text || !text.trim()) return;
-    narration.speak(text, { role: 'patient' });
-  }, [canVocalize, narration]);
+    narration.speak(text, { role: 'patient', patientVoice: voiceProfile });
+  }, [canVocalize, narration, voiceProfile]);
 
   // Emit a short scripted pain reaction. Silently no-ops for an unconscious
   // patient or an unknown reaction kind.
@@ -77,15 +87,19 @@ export function usePatientVoice(caseData: CaseScenario, live: PatientCommunicati
     if (!canVocalize) return;
     const lines = REACTION_LINES[kind];
     if (!lines || lines.length === 0) return;
-    narration.speak(pickLine(lines), { role: 'patient' });
-  }, [canVocalize, narration]);
+    narration.speak(pickLine(lines), { role: 'patient', patientVoice: voiceProfile });
+  }, [canVocalize, narration, voiceProfile]);
 
   return {
     communication,
     /** True when the patient is physiologically able to be heard. */
     canVocalize,
-    /** True while the patient's voice is currently playing. */
-    isSpeaking: narration.isSpeaking,
+    /** Exact patient playback lifecycle for bedside UI feedback. */
+    playbackStatus,
+    /** True only while patient-role audio is actually playing. */
+    isSpeaking: playbackStatus === 'speaking',
+    enabled: narration.enabled,
+    toggleEnabled: narration.toggleEnabled,
     /** Per-frame 0..1 lip-sync amplitude — feed to BodyMesh's mouthOpenRef. */
     mouthOpenRef: narration.mouthOpenRef,
     say,

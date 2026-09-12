@@ -2,6 +2,40 @@ import path from "path"
 import react from "@vitejs/plugin-react"
 import { defineConfig, loadEnv, type Plugin } from "vite"
 
+type VoiceRole = 'dispatcher' | 'patient' | 'narrator'
+type PatientVoiceProfile = { gender?: 'male' | 'female' }
+
+function envValue(env: Record<string, string>, name: string, fallback: string): string {
+  return env[name] || process.env[name] || fallback
+}
+
+export function resolveProxyVoice(
+  env: Record<string, string>,
+  provider: 'elevenlabs' | 'ai-gateway',
+  role: VoiceRole,
+  patientVoice?: PatientVoiceProfile,
+): string {
+  if (provider === 'elevenlabs') {
+    if (role === 'patient' && patientVoice?.gender === 'male') {
+      return envValue(env, 'ELEVENLABS_VOICE_PATIENT_MALE', 'pNInz6obpgDQGcFmaJgB')
+    }
+    const name = `ELEVENLABS_VOICE_${role.toUpperCase()}`
+    const fallback = role === 'dispatcher'
+      ? 'pNInz6obpgDQGcFmaJgB'
+      : role === 'patient'
+        ? '21m00Tcm4TlvDq8ikWAM'
+        : 'EXAVITQu4vr4xnSDxMaL'
+    return envValue(env, name, fallback)
+  }
+
+  if (role === 'patient' && patientVoice?.gender === 'male') {
+    return envValue(env, 'AI_GATEWAY_VOICE_PATIENT_MALE', 'onyx')
+  }
+  const name = `AI_GATEWAY_VOICE_${role.toUpperCase()}`
+  const fallback = role === 'dispatcher' ? 'alloy' : role === 'patient' ? 'shimmer' : 'nova'
+  return envValue(env, name, fallback)
+}
+
 /**
  * Dev-only TTS proxy with the same fall-through as production:
  *   ElevenLabs (primary) → Vercel AI Gateway OpenAI speech (mid-tier) →
@@ -19,7 +53,9 @@ import { defineConfig, loadEnv, type Plugin } from "vite"
  * Optional overrides:
  *   ELEVENLABS_MODEL=eleven_turbo_v2_5
  *   ELEVENLABS_VOICE_DISPATCHER / _PATIENT / _NARRATOR=<voiceId>
+ *   ELEVENLABS_VOICE_PATIENT_MALE=<voiceId>
  *   AI_GATEWAY_TTS_MODEL=openai/tts-1
+ *   AI_GATEWAY_VOICE_PATIENT_MALE=<voiceName>
  */
 function ttsProxy(env: Record<string, string>): Plugin {
   const KEY = (env.ELEVENLABS_API_KEY || process.env.ELEVENLABS_API_KEY || '').trim()
@@ -29,29 +65,21 @@ function ttsProxy(env: Record<string, string>): Plugin {
   // keys use the documented sk_ prefix and are substantially longer.
   const HAS_PLAUSIBLE_KEY = /^sk_[A-Za-z0-9_-]{20,}$/.test(KEY)
   const MODEL = env.ELEVENLABS_MODEL || process.env.ELEVENLABS_MODEL || 'eleven_turbo_v2_5'
-  const VOICES: Record<string, string> = {
-    // Long-standing ElevenLabs default voices (overridable via env).
-    dispatcher: env.ELEVENLABS_VOICE_DISPATCHER || 'pNInz6obpgDQGcFmaJgB', // Adam — clear male
-    patient: env.ELEVENLABS_VOICE_PATIENT || '21m00Tcm4TlvDq8ikWAM',       // Rachel — female
-    narrator: env.ELEVENLABS_VOICE_NARRATOR || 'EXAVITQu4vr4xnSDxMaL',     // Sarah — neutral
-  }
-
   // Vercel AI Gateway (OpenAI speech) mid-tier.
   const GATEWAY_KEY = (env.AI_GATEWAY_API_KEY || process.env.AI_GATEWAY_API_KEY || '').trim()
   const GATEWAY_MODEL = env.AI_GATEWAY_TTS_MODEL || process.env.AI_GATEWAY_TTS_MODEL || 'openai/tts-1'
   const GATEWAY_BASE = (env.AI_GATEWAY_BASE_URL || process.env.AI_GATEWAY_BASE_URL || 'https://ai-gateway.vercel.sh/v1').replace(/\/$/, '')
-  const GATEWAY_VOICES: Record<string, string> = {
-    dispatcher: env.AI_GATEWAY_VOICE_DISPATCHER || 'alloy',
-    patient: env.AI_GATEWAY_VOICE_PATIENT || 'shimmer',
-    narrator: env.AI_GATEWAY_VOICE_NARRATOR || 'nova',
-  }
   const HAS_GATEWAY = GATEWAY_KEY.length > 0
 
-  async function elevenLabsAudio(text: string, role: string): Promise<Buffer | null> {
+  async function elevenLabsAudio(
+    text: string,
+    role: VoiceRole,
+    patientVoice?: PatientVoiceProfile,
+  ): Promise<Buffer | null> {
     if (!HAS_PLAUSIBLE_KEY) return null
     try {
       const upstream = await fetch(
-        `https://api.elevenlabs.io/v1/text-to-speech/${VOICES[role] || VOICES.narrator}/stream?optimize_streaming_latency=2`,
+        `https://api.elevenlabs.io/v1/text-to-speech/${resolveProxyVoice(env, 'elevenlabs', role, patientVoice)}/stream?optimize_streaming_latency=2`,
         {
           method: 'POST',
           headers: {
@@ -74,7 +102,11 @@ function ttsProxy(env: Record<string, string>): Plugin {
     }
   }
 
-  async function gatewayAudio(text: string, role: string): Promise<Buffer | null> {
+  async function gatewayAudio(
+    text: string,
+    role: VoiceRole,
+    patientVoice?: PatientVoiceProfile,
+  ): Promise<Buffer | null> {
     if (!HAS_GATEWAY) return null
     try {
       const upstream = await fetch(`${GATEWAY_BASE}/audio/speech`, {
@@ -86,7 +118,7 @@ function ttsProxy(env: Record<string, string>): Plugin {
         },
         body: JSON.stringify({
           model: GATEWAY_MODEL,
-          voice: GATEWAY_VOICES[role] || GATEWAY_VOICES.narrator,
+          voice: resolveProxyVoice(env, 'ai-gateway', role, patientVoice),
           input: text,
           response_format: 'mp3',
         }),
@@ -144,12 +176,21 @@ function ttsProxy(env: Record<string, string>): Plugin {
         req.on('data', (chunk) => { body += chunk })
         req.on('end', async () => {
           try {
-            const { text, role } = JSON.parse(body || '{}') as { text?: string; role?: string }
+            const { text, role, patientVoice } = JSON.parse(body || '{}') as {
+              text?: string
+              role?: string
+              patientVoice?: PatientVoiceProfile
+            }
             if (!text || !text.trim()) { res.statusCode = 400; res.end('no text'); return }
-            const safeRole = role ?? 'narrator'
+            const safeRole: VoiceRole = role === 'dispatcher' || role === 'patient' || role === 'narrator'
+              ? role
+              : 'narrator'
+            const safePatientVoice = patientVoice?.gender === 'male'
+              ? { gender: 'male' as const }
+              : undefined
 
             // Fall-through: ElevenLabs → Vercel AI Gateway → 502 (client Web Speech).
-            const elevenLabs = await elevenLabsAudio(text, safeRole)
+            const elevenLabs = await elevenLabsAudio(text, safeRole, safePatientVoice)
             if (elevenLabs) {
               res.statusCode = 200
               res.setHeader('Content-Type', 'audio/mpeg')
@@ -158,7 +199,7 @@ function ttsProxy(env: Record<string, string>): Plugin {
               res.end(elevenLabs)
               return
             }
-            const gateway = await gatewayAudio(text, safeRole)
+            const gateway = await gatewayAudio(text, safeRole, safePatientVoice)
             if (gateway) {
               res.statusCode = 200
               res.setHeader('Content-Type', 'audio/mpeg')

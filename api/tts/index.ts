@@ -1,10 +1,12 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
 type VoiceRole = 'dispatcher' | 'patient' | 'narrator';
+type PatientVoiceProfile = { gender?: 'male' | 'female' };
 
 type TtsRequestBody = {
   text?: string;
   role?: VoiceRole;
+  patientVoice?: PatientVoiceProfile;
 };
 
 const MODEL = process.env.ELEVENLABS_MODEL || 'eleven_turbo_v2_5';
@@ -14,6 +16,8 @@ const VOICES: Record<VoiceRole, string> = {
   patient: process.env.ELEVENLABS_VOICE_PATIENT || '21m00Tcm4TlvDq8ikWAM',
   narrator: process.env.ELEVENLABS_VOICE_NARRATOR || 'EXAVITQu4vr4xnSDxMaL',
 };
+const ELEVENLABS_PATIENT_MALE_VOICE =
+  process.env.ELEVENLABS_VOICE_PATIENT_MALE || 'pNInz6obpgDQGcFmaJgB';
 
 // ---------------------------------------------------------------------------
 // Vercel AI Gateway (OpenAI speech) — the mid-tier between ElevenLabs and the
@@ -32,6 +36,20 @@ const GATEWAY_VOICES: Record<VoiceRole, string> = {
   patient: process.env.AI_GATEWAY_VOICE_PATIENT || 'shimmer',
   narrator: process.env.AI_GATEWAY_VOICE_NARRATOR || 'nova',
 };
+const GATEWAY_PATIENT_MALE_VOICE = process.env.AI_GATEWAY_VOICE_PATIENT_MALE || 'onyx';
+
+export function resolveTtsVoice(
+  provider: 'elevenlabs' | 'ai-gateway',
+  role: VoiceRole,
+  patientVoice?: PatientVoiceProfile,
+): string {
+  if (role === 'patient' && patientVoice?.gender === 'male') {
+    return provider === 'elevenlabs'
+      ? ELEVENLABS_PATIENT_MALE_VOICE
+      : GATEWAY_PATIENT_MALE_VOICE;
+  }
+  return provider === 'elevenlabs' ? VOICES[role] : GATEWAY_VOICES[role];
+}
 
 type BodyCarrier = IncomingMessage & {
   body?: unknown;
@@ -67,11 +85,15 @@ function hasPlausibleElevenLabsKey(): boolean {
 }
 
 /** Primary engine. Returns the MP3 buffer, or throws/returns null on failure. */
-async function synthesiseWithElevenLabs(text: string, role: VoiceRole): Promise<Buffer | null> {
+async function synthesiseWithElevenLabs(
+  text: string,
+  role: VoiceRole,
+  patientVoice?: PatientVoiceProfile,
+): Promise<Buffer | null> {
   const key = process.env.ELEVENLABS_API_KEY?.trim();
   if (!key || !/^sk_[A-Za-z0-9_-]{20,}$/.test(key)) return null;
 
-  const voiceId = VOICES[role];
+  const voiceId = resolveTtsVoice('elevenlabs', role, patientVoice);
   const upstream = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=2`,
     {
@@ -100,7 +122,11 @@ async function synthesiseWithElevenLabs(text: string, role: VoiceRole): Promise<
 }
 
 /** Mid-tier engine: Vercel AI Gateway OpenAI speech. Null when unconfigured/failed. */
-async function synthesiseWithGateway(text: string, role: VoiceRole): Promise<Buffer | null> {
+async function synthesiseWithGateway(
+  text: string,
+  role: VoiceRole,
+  patientVoice?: PatientVoiceProfile,
+): Promise<Buffer | null> {
   if (!GATEWAY_API_KEY) return null;
   const model = GATEWAY_TTS_MODEL;
 
@@ -113,7 +139,7 @@ async function synthesiseWithGateway(text: string, role: VoiceRole): Promise<Buf
     },
     body: JSON.stringify({
       model,
-      voice: GATEWAY_VOICES[role],
+      voice: resolveTtsVoice('ai-gateway', role, patientVoice),
       input: text,
       response_format: 'mp3',
     }),
@@ -158,12 +184,15 @@ export default async function handler(req: BodyCarrier, res: ServerResponse) {
   }
 
   const role = normaliseRole(body.role);
+  const patientVoice = body.patientVoice?.gender === 'male'
+    ? { gender: 'male' as const }
+    : undefined;
 
   // Fall-through order: ElevenLabs (primary) → Vercel AI Gateway (mid-tier) →
   // non-2xx so the client reaches Web Speech. Each engine returns null on any
   // miss (missing/invalid key, 401/429/503, empty audio, hard upstream fail).
   try {
-    const elevenLabs = await synthesiseWithElevenLabs(text, role).catch(() => null);
+    const elevenLabs = await synthesiseWithElevenLabs(text, role, patientVoice).catch(() => null);
     if (elevenLabs) {
       res.setHeader('X-TTS-Provider', 'elevenlabs');
       res.statusCode = 200;
@@ -174,7 +203,7 @@ export default async function handler(req: BodyCarrier, res: ServerResponse) {
       return;
     }
 
-    const gateway = await synthesiseWithGateway(text, role).catch(() => null);
+    const gateway = await synthesiseWithGateway(text, role, patientVoice).catch(() => null);
     if (gateway) {
       res.setHeader('X-TTS-Provider', 'ai-gateway');
       res.statusCode = 200;
