@@ -199,6 +199,7 @@ export function PatientPostEffects() {
 interface AdaptiveQualityProps {
   tier: QualityTier;
   onTierChange: (next: QualityTier) => void;
+  postEffectsMounted?: boolean;
 }
 
 /**
@@ -207,7 +208,7 @@ interface AdaptiveQualityProps {
  * State is minimal: the single `tier` number lives in the parent, everything
  * else here is refs.
  */
-export function AdaptiveQuality({ tier, onTierChange }: AdaptiveQualityProps) {
+export function AdaptiveQuality({ tier, onTierChange, postEffectsMounted = false }: AdaptiveQualityProps) {
   const setDpr = useThree((s) => s.setDpr);
   const baseDprRef = useRef(
     typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 2) : 2,
@@ -232,11 +233,12 @@ export function AdaptiveQuality({ tier, onTierChange }: AdaptiveQualityProps) {
     const q = qualityForTier(tier, baseDprRef.current);
     (window as unknown as { __adaptiveQuality?: object }).__adaptiveQuality = {
       tier,
-      composerEnabled: q.composerEnabled,
+      composerAllowed: q.composerEnabled,
+      composerEnabled: postEffectsMounted,
       dpr: q.dpr,
       contactShadows: q.contactShadows,
     };
-  }, [tier]);
+  }, [tier, postEffectsMounted]);
 
   const move = (direction: 1 | -1) => {
     if (pinnedRef.current) return;

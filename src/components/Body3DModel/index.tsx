@@ -38,6 +38,7 @@ import type { LimbSide, SurfaceSampler } from './BodyMesh';
 import { AdaptiveQuality, qualityForTier } from './AdaptiveQuality';
 import { TreatmentBayEnvironment, CameraEntrance } from './Environment';
 import { AmbientAudioLayer } from './AmbientAudioLayer';
+import { ConversationFocus } from './ConversationFocus';
 import type { AmbientBreathKind } from '@/lib/ambientAudio';
 import type { QualityTier } from './AdaptiveQuality';
 import { AnatomyReferenceLayer } from './AnatomyReferenceLayer';
@@ -6345,7 +6346,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                   contact shadows). Lives inside the Canvas so it reads the
                   real frame loop; the tier state lives outside so the JSX
                   below can derive from it. */}
-              <AdaptiveQuality tier={qualityTier} onTierChange={setQualityTier} />
+              <AdaptiveQuality tier={qualityTier} onTierChange={setQualityTier}
+                postEffectsMounted={caseData.id === 'resp-001' && bedsideConversation.active && !!faceAttachment && quality.composerEnabled} />
 
               <ambientLight intensity={bayVariant === 'home' ? 0.12 : 0.1} />
               <directionalLight position={[4, 8, 5]} intensity={bayVariant === 'home' ? 0.32 : 1.45} color="#fff2e6" />
@@ -6582,12 +6584,14 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 <ContactShadows position={[0, -0.01, 0]} opacity={0.32} scale={3.4} blur={3.4} far={3} />
               )}
 
-              {/* Clinical care uses direct antialiased ACES rendering throughout.
-                  The optional cinematic composer intermittently outputs black
-                  frames after repeated Retina-sized examination transitions,
-                  even when retained across dock resizes. Keep physical lighting,
-                  skin textures and contact shadows without that screen-space
-                  pipeline; colour findings must also match across camera modes. */}
+              {/* Keep the old AO/upscale composer out of clinical care: it
+                  produced black frames on Retina dock resizes. The reference
+                  scene uses a focus + ACES-only pass during dialogue only.
+                  Hands-on assessment keeps direct rendering and auto-clear;
+                  the adaptive ladder sheds portrait focus under load. */}
+              {caseData.id === 'resp-001' && bedsideConversation.active && faceAttachment && quality.composerEnabled && (
+                <ConversationFocus active={bedsideConversation.active} face={faceAttachment} />
+              )}
 
               <OrbitControls
                 ref={controlsRef}
