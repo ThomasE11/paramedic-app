@@ -20,6 +20,8 @@ import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLigh
 import type { EnvironmentVariant } from '@/lib/sceneEnvironment';
 import { getVillaTextures } from './textures';
 import { KenneyPatientChair } from './KenneyPatientChair';
+import { Resp001VillaDressing } from './Resp001VillaDressing';
+import { isResp001VillaProfile, type SceneProfile } from './sceneProfile';
 
 const NO_RAYCAST = () => null;
 
@@ -149,6 +151,52 @@ function WindowView() {
   );
 }
 
+/** Profile-specific exterior assembled from lightweight geometry. It avoids
+ * projecting the resp-001 incident photograph back into the room while still
+ * giving the window a legible UAE courtyard, neighbouring villa and palm. */
+function VillaCourtyardView() {
+  return (
+    <group>
+      <mesh position={[0, 0, -0.03]} raycast={NO_RAYCAST}>
+        <planeGeometry args={[1.9, 1.25]} />
+        <meshBasicMaterial color="#9dcadf" toneMapped={false} />
+      </mesh>
+      <mesh position={[0, -0.42, -0.015]} raycast={NO_RAYCAST}>
+        <planeGeometry args={[1.9, 0.42]} />
+        <meshBasicMaterial color="#d8c39d" toneMapped={false} />
+      </mesh>
+      <group position={[0.45, -0.16, 0]}>
+        <mesh raycast={NO_RAYCAST}>
+          <planeGeometry args={[0.76, 0.48]} />
+          <meshBasicMaterial color="#f0dfbe" toneMapped={false} />
+        </mesh>
+        <mesh position={[0, 0.28, 0.006]} raycast={NO_RAYCAST}>
+          <coneGeometry args={[0.54, 0.18, 4]} />
+          <meshBasicMaterial color="#b88b5d" toneMapped={false} />
+        </mesh>
+        {[-0.21, 0.21].map(x => (
+          <mesh key={`courtyard-window-${x}`} position={[x, 0.02, 0.008]} raycast={NO_RAYCAST}>
+            <planeGeometry args={[0.16, 0.22]} />
+            <meshBasicMaterial color="#527282" toneMapped={false} />
+          </mesh>
+        ))}
+      </group>
+      <group position={[-0.58, -0.12, 0.012]}>
+        <mesh position={[0, -0.12, 0]} raycast={NO_RAYCAST}>
+          <planeGeometry args={[0.055, 0.55]} />
+          <meshBasicMaterial color="#795332" toneMapped={false} />
+        </mesh>
+        {[-0.48, -0.24, 0, 0.24, 0.48].map((rotation, index) => (
+          <mesh key={`courtyard-palm-${index}`} position={[Math.sin(rotation) * 0.15, 0.16 + Math.abs(rotation) * 0.04, 0.005]} rotation={[0, 0, rotation]} scale={[1.8, 0.55, 1]} raycast={NO_RAYCAST}>
+            <circleGeometry args={[0.16, 10]} />
+            <meshBasicMaterial color="#315d39" toneMapped={false} />
+          </mesh>
+        ))}
+      </group>
+    </group>
+  );
+}
+
 /** Warm UAE daylight entering through the villa window. A RectAreaLight gives
  *  the broad, soft window wash; the existing spot remains the single shadow
  *  caster so the patient still gets a readable key shadow on the floor. */
@@ -171,14 +219,13 @@ function WindowAreaLight() {
 
 // Dust motes drifting through the window beam. Kept separate from the bay
 // motes so the villa beam reads as daylight, not surgical-light dust.
-const HOME_DUST_COUNT = 90;
 const HOME_DUST_HEIGHT = 1.9;
-function HomeDustMotes() {
+function HomeDustMotes({ count = 90, opacity = 0.26, size = 0.012 }: { count?: number; opacity?: number; size?: number }) {
   const pointsRef = useRef<THREE.Points>(null);
   const data = useMemo(() => {
-    const base = new Float32Array(HOME_DUST_COUNT * 3);
-    const seed = new Float32Array(HOME_DUST_COUNT * 2);
-    for (let i = 0; i < HOME_DUST_COUNT; i++) {
+    const base = new Float32Array(count * 3);
+    const seed = new Float32Array(count * 2);
+    for (let i = 0; i < count; i++) {
       base[i * 3] = -1.45 + (Math.random() - 0.5) * 1.5;
       base[i * 3 + 1] = 0.25 + Math.random() * HOME_DUST_HEIGHT;
       base[i * 3 + 2] = ROOM.backZ + 0.35 + Math.random() * 1.8;
@@ -186,7 +233,7 @@ function HomeDustMotes() {
       seed[i * 2 + 1] = 0.01 + Math.random() * 0.03;
     }
     return { base, seed, positions: base.slice() };
-  }, []);
+  }, [count]);
 
   useFrame(({ clock }) => {
     const points = pointsRef.current;
@@ -195,7 +242,7 @@ function HomeDustMotes() {
     const arr = attr.array as Float32Array;
     const t = clock.elapsedTime;
     const { base, seed } = data;
-    for (let i = 0; i < HOME_DUST_COUNT; i++) {
+    for (let i = 0; i < count; i++) {
       const phase = seed[i * 2];
       const fall = seed[i * 2 + 1];
       const y = base[i * 3 + 1] - t * fall;
@@ -212,11 +259,11 @@ function HomeDustMotes() {
         <bufferAttribute attach="attributes-position" args={[data.positions, 3]} />
       </bufferGeometry>
       <pointsMaterial
-        size={0.012}
+        size={size}
         sizeAttenuation
         color="#ffe9c4"
         transparent
-        opacity={0.26}
+        opacity={opacity}
         blending={THREE.AdditiveBlending}
         depthWrite={false}
       />
@@ -224,8 +271,19 @@ function HomeDustMotes() {
   );
 }
 
-function HomeScene({ hideOverhead, shadowsEnabled, showPatientSeat }: { hideOverhead: boolean; shadowsEnabled: boolean; showPatientSeat: boolean }) {
+function HomeScene({
+  hideOverhead,
+  shadowsEnabled,
+  showPatientSeat,
+  sceneProfile,
+}: {
+  hideOverhead: boolean;
+  shadowsEnabled: boolean;
+  showPatientSeat: boolean;
+  sceneProfile?: SceneProfile;
+}) {
   const tex = getVillaTextures();
+  const hasResp001Dressing = isResp001VillaProfile(sceneProfile);
   return (
     <group>
       {/* Oak floor */}
@@ -240,15 +298,23 @@ function HomeScene({ hideOverhead, shadowsEnabled, showPatientSeat }: { hideOver
         />
       </mesh>
 
-      {/* Rug under the patient — flat plane, soft weave */}
-      <mesh position={[0, -0.043, 0.15]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
-        <planeGeometry args={[3.7, 2.6]} />
-        <meshStandardMaterial color="#8c4436" roughness={0.98} />
-      </mesh>
-      <mesh position={[0, -0.042, 0.15]} rotation={[-Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
-        <planeGeometry args={[3.15, 2.1]} />
-        <meshStandardMaterial color="#a15a44" roughness={0.98} />
-      </mesh>
+      {hasResp001Dressing ? (
+        <Suspense fallback={null}>
+          <Resp001VillaDressing shadowsEnabled={shadowsEnabled} showPatientSeat={showPatientSeat} />
+        </Suspense>
+      ) : (
+        <>
+          {/* Shared home rug. The case profile replaces this with its authored weave. */}
+          <mesh position={[0, -0.043, 0.15]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow raycast={NO_RAYCAST}>
+            <planeGeometry args={[3.7, 2.6]} />
+            <meshStandardMaterial color="#8c4436" roughness={0.98} />
+          </mesh>
+          <mesh position={[0, -0.042, 0.15]} rotation={[-Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
+            <planeGeometry args={[3.15, 2.1]} />
+            <meshStandardMaterial color="#a15a44" roughness={0.98} />
+          </mesh>
+        </>
+      )}
 
       {/* Back wall split around an open hallway. A real opening is important:
           painting a dark rectangle on the old wall preserved the stage-box
@@ -359,16 +425,20 @@ function HomeScene({ hideOverhead, shadowsEnabled, showPatientSeat }: { hideOver
       <group position={[-1.45, 1.5, ROOM.backZ + 0.04]}>
         {/* Exterior view (emissive photo). Falls back to a warm glow plane. */}
         <group position={[0, 0, -0.12]}>
-          <Suspense
-            fallback={
-              <mesh raycast={NO_RAYCAST}>
-                <planeGeometry args={[1.9, 1.25]} />
-                <meshBasicMaterial color="#ffe9c4" toneMapped={false} />
-              </mesh>
-            }
-          >
-            <WindowView />
-          </Suspense>
+          {hasResp001Dressing ? (
+            <VillaCourtyardView />
+          ) : (
+            <Suspense
+              fallback={
+                <mesh raycast={NO_RAYCAST}>
+                  <planeGeometry args={[1.9, 1.25]} />
+                  <meshBasicMaterial color="#ffe9c4" toneMapped={false} />
+                </mesh>
+              }
+            >
+              <WindowView />
+            </Suspense>
+          )}
         </group>
         {/* Glass pane — faint, slightly reflective */}
         <mesh raycast={NO_RAYCAST}>
@@ -399,8 +469,8 @@ function HomeScene({ hideOverhead, shadowsEnabled, showPatientSeat }: { hideOver
         </mesh>
       </group>
 
-      {/* Sofa against the back wall */}
-      <group position={[-1.65, 0, ROOM.backZ + 0.55]}>
+      {/* Generic sofa stays unchanged for every unprofiled home case. */}
+      {!hasResp001Dressing && <group position={[-1.65, 0, ROOM.backZ + 0.55]}>
         {/* Seat base */}
         <mesh position={[0, 0.24, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
           <boxGeometry args={[1.7, 0.34, 0.75]} />
@@ -425,18 +495,18 @@ function HomeScene({ hideOverhead, shadowsEnabled, showPatientSeat }: { hideOver
             <meshStandardMaterial color="#6b7758" roughness={0.98} />
           </mesh>
         ))}
-      </group>
+      </group>}
 
       {/* Kenney dining chair, scaled onto the seated pelvis plant. The
           previous box-pan + slab backrest read as a crate, not furniture. */}
-      {showPatientSeat && (
+      {showPatientSeat && !hasResp001Dressing && (
         <Suspense fallback={null}>
           <KenneyPatientChair kind="dining" name="home-patient-chair" />
         </Suspense>
       )}
 
-      {/* Coffee table, pushed aside to make room for the crew */}
-      <group position={[-1.75, 0, 1.3]} rotation={[0, 0.4, 0]}>
+      {/* Generic table stays unchanged for every unprofiled home case. */}
+      {!hasResp001Dressing && <group position={[-1.75, 0, 1.3]} rotation={[0, 0.4, 0]}>
         <mesh position={[0, 0.33, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
           <boxGeometry args={[0.95, 0.05, 0.55]} />
           <meshStandardMaterial color="#5a3d25" roughness={0.35} metalness={0.05} />
@@ -447,7 +517,7 @@ function HomeScene({ hideOverhead, shadowsEnabled, showPatientSeat }: { hideOver
             <meshStandardMaterial color="#3f2a19" roughness={0.5} />
           </mesh>
         ))}
-      </group>
+      </group>}
 
       {/* Floor lamp in the far corner — pole + emissive shade, own point light */}
       <group position={[2.78, 0, -1.8]}>
@@ -478,7 +548,9 @@ function HomeScene({ hideOverhead, shadowsEnabled, showPatientSeat }: { hideOver
           practical pool and the AC gives a cool top-fill so the room reads
           like a villa interior instead of a clinic bay. */}
       <WindowAreaLight />
-      <HomeDustMotes />
+      {hasResp001Dressing
+        ? <HomeDustMotes count={24} opacity={0.08} size={0.006} />
+        : <HomeDustMotes />}
       <KeyLight color="#ffe0b8" intensity={5.6} position={[-1.45, 2.35, ROOM.backZ + 0.55]} shadowsEnabled={shadowsEnabled} />
       <pointLight position={[-1.45, 1.6, ROOM.backZ + 0.3]} intensity={2.6} distance={6} decay={2} color="#fff0d2" />
       <pointLight position={[1.6, 2.18, ROOM.backZ + 0.35]} intensity={1.15} distance={4.5} decay={2} color="#cfe0ff" />
@@ -1197,13 +1269,15 @@ export function SceneVariantEnvironment({
   hideOverhead,
   shadowsEnabled,
   showPatientSeat,
+  sceneProfile,
 }: {
   variant: Exclude<EnvironmentVariant, 'clinic'>;
   hideOverhead: boolean;
   shadowsEnabled: boolean;
   showPatientSeat: boolean;
+  sceneProfile?: SceneProfile;
 }) {
-  if (variant === 'home') return <HomeScene hideOverhead={hideOverhead} shadowsEnabled={shadowsEnabled} showPatientSeat={showPatientSeat} />;
+  if (variant === 'home') return <HomeScene hideOverhead={hideOverhead} shadowsEnabled={shadowsEnabled} showPatientSeat={showPatientSeat} sceneProfile={sceneProfile} />;
   if (variant === 'public') return <PublicScene hideOverhead={hideOverhead} shadowsEnabled={shadowsEnabled} showPatientSeat={showPatientSeat} />;
   if (variant === 'industrial') return <IndustrialScene shadowsEnabled={shadowsEnabled} />;
   if (variant === 'fire') return <FireScene shadowsEnabled={shadowsEnabled} />;

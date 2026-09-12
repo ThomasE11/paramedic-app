@@ -1,0 +1,36 @@
+{
+  "sceneProfile": "resp-001-villa",
+  "geometry": {
+    "source": "scripts/anatomy-models/build-resp001-villa-dressing.py",
+    "licence": "Original project-authored geometry; no third-party geometry"
+  },
+  "materials": [
+    {
+      "asset": "Cotton Jersey",
+      "assetPage": "https://polyhaven.com/a/cotton_jersey",
+      "licence": "CC0 1.0 Universal",
+      "licenceUrl": "https://polyhaven.com/license",
+      "authors": {
+        "colormass": "Photography",
+        "Rico Cilliers": "Processing"
+      },
+      "files": [
+        {
+          "role": "diffuse",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/cotton_jersey/cotton_jersey_diff_1k.jpg",
+          "md5": "d2f4493fdd48634b50d40f810ce9deb7"
+        },
+        {
+          "role": "normal-opengl",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/cotton_jersey/cotton_jersey_nor_gl_1k.jpg",
+          "md5": "2dcc9dda3b726477f607c808e52f1833"
+        },
+        {
+          "role": "roughness",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/cotton_jersey/cotton_jersey_rough_1k.jpg",
+          "md5": "ac691d215d3aca34dcd6ea2d03937286"
+        }
+      ]
+    }
+  ]
+}

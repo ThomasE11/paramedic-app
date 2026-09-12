@@ -23,6 +23,7 @@ import { getBayTextures } from './textures';
 import { SceneVariantEnvironment } from './SceneVariant';
 import { KenneyPatientChair } from './KenneyPatientChair';
 import type { EnvironmentVariant } from '@/lib/sceneEnvironment';
+import { isResp001VillaProfile, type SceneProfile } from './sceneProfile';
 import type { PatientSupportSurface } from '@/lib/patientStaging';
 import { focusRig, resetFocusRig, FOCUS_REST, FOCUS_WIDE } from '@/lib/focusRig';
 
@@ -688,12 +689,14 @@ export function TreatmentBayEnvironment({
   showPatientSeat = false,
   shadowsEnabled = true,
   variant = 'clinic',
+  sceneProfile,
 }: {
   hideOverhead?: boolean;
   patientSupportSurface?: PatientSupportSurface;
   showPatientSeat?: boolean;
   shadowsEnabled?: boolean;
   variant?: EnvironmentVariant;
+  sceneProfile?: SceneProfile;
 }) {
   const isClinic = variant === 'clinic';
   return (
@@ -712,6 +715,7 @@ export function TreatmentBayEnvironment({
           hideOverhead={hideOverhead}
           shadowsEnabled={shadowsEnabled}
           showPatientSeat={showPatientSeat}
+          sceneProfile={sceneProfile}
         />
       )}
       {/* Arrival scenes hide the trolley until the crew loads the patient —
@@ -737,7 +741,7 @@ export function TreatmentBayEnvironment({
           <CrashCart />
         </>
       )}
-      <DustMotes />
+      {!isResp001VillaProfile(sceneProfile) && <DustMotes />}
       <SoftGroundShadow />
     </group>
   );
