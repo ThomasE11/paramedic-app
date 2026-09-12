@@ -96,3 +96,55 @@ test('resp-001 ambient nodes follow mute preference and the positioned chest', a
   expect(mutedAgain.patient.volume).toBe(0);
   expect(cloudSpeechRequests).toBe(0);
 });
+
+test('resp-001 wheeze and AC pan across the listener during an orbit', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.addInitScript(() => {
+    localStorage.setItem('paramedic-studio-voice-enabled', 'false');
+  });
+  await page.goto('/?capture&devLiveCase=resp-001');
+  await page.waitForFunction(() => {
+    const scene = window.__r3f?.scene;
+    return Boolean(scene?.getObjectByName('patient-breath') && scene?.getObjectByName('villa-ac-hum'));
+  });
+
+  const stereoGeometry = await page.evaluate(() => {
+    const state = window.__r3f!;
+    const { camera, controls, gl, scene } = state;
+    const patient = scene.getObjectByName('patient-breath')!;
+    const ac = scene.getObjectByName('villa-ac-hum')!;
+    const Vector3 = patient.position.constructor as typeof import('three').Vector3;
+    gl.setAnimationLoop(null);
+    if (controls) controls.enabled = false;
+
+    const relativeX = (emitter: import('three').Object3D) => {
+      const world = emitter.getWorldPosition(new Vector3());
+      return camera.worldToLocal(world).x;
+    };
+    const sample = (position: [number, number, number]) => {
+      camera.position.set(...position);
+      camera.lookAt(0, 1.1, 0.25);
+      camera.updateMatrixWorld(true);
+      scene.updateMatrixWorld(true);
+      return {
+        patientX: relativeX(patient),
+        acX: relativeX(ac),
+      };
+    };
+
+    return {
+      leftOrbit: sample([-2.4, 1.55, 2.2]),
+      rightOrbit: sample([2.4, 1.55, 2.2]),
+      patientPanningModel: (patient as import('three').PositionalAudio).panner.panningModel,
+      acPanningModel: (ac as import('three').PositionalAudio).panner.panningModel,
+    };
+  });
+
+  expect(stereoGeometry.patientPanningModel).toBe('HRTF');
+  expect(stereoGeometry.acPanningModel).toBe('HRTF');
+  expect(stereoGeometry.leftOrbit.patientX).toBeGreaterThan(0.3);
+  expect(stereoGeometry.rightOrbit.patientX).toBeLessThan(-0.3);
+  expect(Math.abs(stereoGeometry.leftOrbit.acX)).toBeGreaterThan(0.3);
+  expect(Math.abs(stereoGeometry.rightOrbit.acX)).toBeGreaterThan(0.3);
+  expect(stereoGeometry.leftOrbit.acX * stereoGeometry.rightOrbit.acX).toBeLessThan(0);
+});
