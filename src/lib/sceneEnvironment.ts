@@ -107,7 +107,9 @@ const AGRICULTURAL_PATTERN = new RegExp(
 const HEAT_PATTERN = new RegExp(
   [
     '\\bdesert\\b',
-    '\\bheat(?:stroke| exhaustion)?\\b',
+    '\\bheatstroke\\b',
+    '\\bheat exhaustion\\b',
+    '\\bheat illness\\b',
     '\\bhyperthermia\\b',
     '\\bsun exposure\\b',
     'direct sun',
@@ -233,7 +235,7 @@ export function deriveSceneEnvironment(caseData: CaseScenario): EnvironmentVaria
   if (
     INDUSTRIAL_PATTERN.test(text)
     && (!authoredVariant || ['public', 'roadside'].includes(authoredVariant))
-    && !/\\boffice\\b|portacabin/.test(text)
+    && !/\boffice\b|portacabin/.test(text)
   ) {
     return 'industrial';
   }

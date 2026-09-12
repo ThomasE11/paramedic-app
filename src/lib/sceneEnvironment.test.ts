@@ -39,6 +39,7 @@ describe('deriveSceneEnvironment', () => {
     expect(deriveSceneEnvironment(fakeCase('Warehouse in Jebel Ali', 'Smoke inhalation after warehouse fire'))).toBe('fire');
     expect(deriveSceneEnvironment(fakeCase('Jumeirah Beach', 'Near-drowning after sea rescue'))).toBe('water');
     expect(deriveSceneEnvironment(fakeCase('Desert worksite', 'Heatstroke during outdoor work'))).toBe('heat');
+    expect(deriveSceneEnvironment(fakeCase('Construction site office', 'Patient was outside in heat prior to collapse'))).toBe('industrial');
   });
 
   it('honours an explicit authored environment', () => {
@@ -66,6 +67,7 @@ describe('deriveSceneEnvironment', () => {
   it('keeps representative authored cases in a coherent scene avenue', () => {
     const variantFor = (id: string) => deriveSceneEnvironment(allCases.find(item => item.id === id)!);
     expect(variantFor('litfl-001')).toBe('public');
+    expect(variantFor('y2-009')).toBe('public');
     expect(variantFor('cardiac-014')).toBe('water');
     expect(variantFor('trauma-012')).toBe('water');
     expect(variantFor('env-001')).toBe('heat');
