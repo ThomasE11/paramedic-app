@@ -1842,8 +1842,10 @@ export function SceneSurveyPanel({ caseData, onEnterScene, onBack }: SceneSurvey
         // learner to sweep and acknowledge every authored visual hotspot.
         const hazardsReviewed = hasReviewedEveryHazard(hazardHotspots.map(hazard => hazard.id), hazardsIdentified);
         if (!hazardsReviewed) return false;
-        if (sceneSafe === true) return true;
-        if (sceneSafe === false) return resourcesRequested.length > 0;
+        // Authored hazards cannot be reconciled with a "safe" declaration.
+        // The learner must declare the scene unsafe and request support.
+        if (sceneSafe === true) return hazardHotspots.length === 0;
+        if (sceneSafe === false) return hazardHotspots.length > 0 && resourcesRequested.length > 0;
         return false;
       }
     }

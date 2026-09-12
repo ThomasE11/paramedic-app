@@ -101,5 +101,14 @@ test('hazardous scenes require every authored hotspot before entry', async ({ pa
     await control.click();
     await expect(control).toHaveAttribute('aria-pressed', 'true');
   }
+  // A hazardous scene must not become enterable after a contradictory safe
+  // declaration, even after every hotspot and PPE item has been addressed.
+  await expect(enterScene).toBeDisabled();
+
+  const unsafe = page.getByRole('button', { name: /Scene is unsafe/i });
+  await unsafe.click();
+  await expect(unsafe).toHaveAttribute('aria-pressed', 'true');
+  await expect(enterScene).toBeDisabled();
+  await page.getByRole('button', { name: 'HazMat', exact: true }).click();
   await expect(enterScene).toBeEnabled();
 });
