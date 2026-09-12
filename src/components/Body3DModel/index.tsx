@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
 import { BodyMesh, getTreatmentBayTransform, treatmentBayClinicalToWorld, type BayPatientStage } from './BodyMesh';
 import { resolveAssessmentContact } from './assessmentContact';
+import { PupilLightExam, PupilLightControls } from './PupilLightExam';
 import { getBreathingPattern, liveBreathingDepth } from '@/lib/breathingPresentation';
 import { activeRespiratoryInterface, type OxygenVisualMode } from '@/lib/respiratoryEquipment';
 import {
@@ -943,7 +944,8 @@ function LandmarkMarkers({
 }) {
   const compactPatient = patientScale < 0.55;
   const visibleMarkers = activeRegion
-    ? landmarks.filter(marker => marker.region === activeRegion && marker.level === 'detail')
+    ? landmarks.filter(marker => marker.region === activeRegion && marker.level === 'detail'
+      && !(useContactAnchors && activeRegion === 'face' && marker.actionId?.startsWith('pulse-')))
     : landmarks.filter(marker => marker.level === 'overview' && (
       requiredRegions.has(marker.region)
       || marker.id === 'eyes-overview'
@@ -4461,6 +4463,7 @@ function RegionalZoomLoupe({
   pupilProfile,
   revealedFindings,
   onAction,
+  eyeControls,
 }: {
   activeRegion: string | null;
   selectedAction: string | null;
@@ -4468,12 +4471,13 @@ function RegionalZoomLoupe({
   pupilProfile: PupilProfile;
   revealedFindings?: Map<string, string>;
   onAction?: (actionId: string) => void;
+  eyeControls?: ReactNode;
 }) {
   const isEyeFocused = activeRegion === 'face'
     && !!selectedAction
     && (selectedAction.includes('pupil') || selectedAction.includes('eyes'));
 
-  if (isEyeFocused) return <PupilCloseUp profile={pupilProfile} />;
+  if (isEyeFocused) return eyeControls ?? <PupilCloseUp profile={pupilProfile} />;
 
   // Chest "zoom loupe" intentionally removed — it duplicated the full chest
   // map already shown in the bottom Hands-On Exam Station. Chest detail now
@@ -4797,6 +4801,7 @@ function PatientFirstExamDock({
   soundProgress,
   onRequestTreat,
   onTechniqueChange,
+  eyeControls,
 }: {
   activeRegion: string;
   actions: ExamAction[];
@@ -4811,6 +4816,7 @@ function PatientFirstExamDock({
   soundProgress: number;
   onRequestTreat?: (hint?: { reason?: string; managementTab?: string; search?: string }) => void;
   onTechniqueChange?: () => void;
+  eyeControls?: ReactNode;
 }) {
   const grouped = TECHNIQUE_ORDER
     .map(technique => {
@@ -5037,6 +5043,7 @@ function PatientFirstExamDock({
         <div className="patient-first-loupe-column">
           {showRegionalLoupe ? (
             <RegionalZoomLoupe
+              eyeControls={eyeControls}
               activeRegion={activeRegion}
               selectedAction={selectedAction}
               caseData={caseData}
@@ -5152,6 +5159,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const [revealedFindings, setRevealedFindings] = useState<Map<string, string>>(new Map());
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [contactAction, setContactAction] = useState<string | null>(null);
+  const [pupilLightSide, setPupilLightSide] = useState<'left' | 'right' | null>(null);
   const [patientReaction, setPatientReaction] = useState<PatientReaction | null>(null);
   // Regions the patient has already consented to exposing this case.
   const consentedRegionsRef = useRef<Set<string>>(new Set());
@@ -5855,7 +5863,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
           // Keep camera assist in the treatment bay so a revealed finding stays
           // framed on the patient — convert upright clinical focus through the
           // stretcher / posture transform used by region zooms.
-          const target = resolveTreatmentBayActionTarget(
+          let target = resolveTreatmentBayActionTarget(
             sampled,
             exactFocus.target,
             point => treatmentBayClinicalToWorld(
@@ -5866,7 +5874,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               patientScale,
             ),
           );
-          const clinicalDirection: [number, number, number] =
+          let clinicalDirection: [number, number, number] =
             patientPosture === 'tripod' || patientPosture === 'seated' || patientMobility === 'standing' || patientMobility === 'pacing'
               ? (/pupil|eyes|lips|mouth|nose|face/.test(actionId)
                   ? [0.04, 0.48, 1]
@@ -5876,6 +5884,17 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                   : /chest|abd/.test(actionId)
                     ? [0.14, 1, 0.18]
                     : [0.2, 0.95, 0.45]);
+          if (caseData.id === 'resp-001' && faceAttachment && /pupil|eyes/.test(actionId)) {
+            let root: THREE.Object3D = faceAttachment;
+            while (root.parent) root = root.parent;
+            const left = root.getObjectByName('eyeL');
+            const right = root.getObjectByName('eyeR');
+            if (left && right) {
+              target = left.getWorldPosition(new THREE.Vector3()).add(right.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5).toArray();
+              faceAttachment.updateWorldMatrix(true, false);
+              clinicalDirection = new THREE.Vector3(0, .025, 1).transformDirection(faceAttachment.matrixWorld).toArray();
+            }
+          }
           const pos = fitCameraPos(
             controlsRef.current,
             target,
@@ -5987,7 +6006,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       playPercussionSound(percType);
       startSoundProgress(actionId, PERCUSSION_DURATION);
     }
-  }, [activeRegion, animateCamera, appliedTreatmentIds, bayStage, caseData, effectiveVitals, patientMobility, patientPosture, patientScale, patientSounds, patientVoice, revealedFindings, startSoundProgress, isInArrest, surfaceSampler, treatmentBayOverviewEnabled]);
+  }, [activeRegion, animateCamera, appliedTreatmentIds, bayStage, caseData, effectiveVitals, patientMobility, patientPosture, patientScale, patientSounds, patientVoice, revealedFindings, startSoundProgress, isInArrest, surfaceSampler, treatmentBayOverviewEnabled, faceAttachment]);
   const handleExamActionRef = useRef(handleExamAction);
   handleExamActionRef.current = handleExamAction;
 
@@ -6081,6 +6100,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const showEyeContext = activeRegion === 'face'
     && !!selectedAction
     && (selectedAction.includes('pupil') || selectedAction.includes('eyes'));
+  useEffect(() => { if (!showEyeContext) setPupilLightSide(null); }, [showEyeContext]);
   const showRegionalLoupe = showEyeContext || activeRegion === 'chest' || activeRegion === 'abdomen';
   // Narrow enough that the right-side exam landmarks (LUQ/LLQ, left lung
   // zones) clear the panel once the camera's loupe bias shifts the patient
@@ -6643,6 +6663,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 patientScale={patientScale}
               />
 
+              {caseData.id === 'resp-001' && showEyeContext && !bedsideConversation.active && (
+                <PupilLightExam side={pupilLightSide} profile={pupilProfile} />
+              )}
+
               {/* Active bleed overlay — pulsing red glow at bleeding wounds,
                   collapses when source control (tourniquet / dressing /
                   chest seal) is applied. */}
@@ -6773,14 +6797,14 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 dampingFactor={0.07}
                 rotateSpeed={0.55}
                 zoomSpeed={0.65}
-                minDistance={activeRegion ? 0.7 : 2}
-                maxDistance={cameraOrbitSafety.maxDistance}
+                minDistance={caseData.id === 'resp-001' && showEyeContext ? .28 : activeRegion ? 0.7 : 2}
+                maxDistance={caseData.id === 'resp-001' && showEyeContext ? 1 : cameraOrbitSafety.maxDistance}
                 minAzimuthAngle={cameraOrbitSafety.minAzimuthAngle}
                 maxAzimuthAngle={cameraOrbitSafety.maxAzimuthAngle}
                 minPolarAngle={Math.PI * 0.15}
                 // The focal point is on the patient, above their support.
                 // Never orbit below that plane into the road/floor underside.
-                maxPolarAngle={Math.PI / 2 - 0.05}
+                maxPolarAngle={caseData.id === 'resp-001' && showEyeContext ? Math.PI * .65 : Math.PI / 2 - 0.05}
                 onStart={cancelCameraAnimation}
               />
             </Canvas>
@@ -6852,6 +6876,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
 
           {patientFirstExamLayout && activeRegion && (
             <PatientFirstExamDock
+              eyeControls={caseData.id === 'resp-001' ? <PupilLightControls side={pupilLightSide} onChange={setPupilLightSide} /> : undefined}
               activeRegion={activeRegion}
               actions={allActions}
               selectedAction={selectedAction}
