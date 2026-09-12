@@ -2142,12 +2142,13 @@ export const secondYearCases: CaseScenario[] = [
       culturalConsiderations: ['Patient may minimise symptoms as they resolved', 'Golf partners present and supportive']
     },
     sceneInfo: {
-      description: 'Golf clubhouse lounge, patient sitting in a club chair beside his golf bag, appears well currently',
+      description: 'Golf clubhouse lounge, patient sitting in a club chair beside his golf bag',
       hazards: ['None identified'],
       bystanders: '2 golf partners present, both witnessed the episode',
       environment: 'Comfortable indoor golf clubhouse lounge, air conditioned',
       environmentVariant: 'public',
-      patientSupportSurface: 'seat'
+      patientSupportSurface: 'seat',
+      sceneImagePath: '/scene-assets/mall-foodcourt-chestpain-male-65.png'
     },
     initialPresentation: {
       generalImpression: 'Middle-aged male, currently appears well, no obvious neurological deficit on initial glance',

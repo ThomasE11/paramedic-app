@@ -55,7 +55,10 @@ export const firstYearCases: CaseScenario[] = [
       description: 'Ground floor apartment, patient on living room floor',
       hazards: ['Cluttered pathway', 'Rug beside patient', 'Limited space'],
       bystanders: 'Daughter present and anxious',
-      environment: 'Warm apartment, air conditioning running'
+      environment: 'Warm apartment, air conditioning running',
+      environmentVariant: 'home',
+      sceneImagePath: '/scene-assets/home-medical-female-dubai-apartment.png',
+      sceneImageCaption: 'Scene — Home, ground floor apartment'
     },
     initialPresentation: {
       generalImpression: 'Elderly female sitting on floor, alert and oriented',
