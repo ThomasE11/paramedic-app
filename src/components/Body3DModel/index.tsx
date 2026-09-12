@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
 import { BodyMesh, getTreatmentBayTransform, treatmentBayClinicalToWorld, RESP001_SEATED_SUPPORT_LIFT, type BayPatientStage } from './BodyMesh';
 import { resolveAssessmentContact } from './assessmentContact';
+import { hasPainfulPalpationFinding } from './palpationReaction';
 import { PilotIrisDetail, PupilLightExam, PupilLightControls } from './PupilLightExam';
 import { getBreathingPattern, liveBreathingDepth } from '@/lib/breathingPresentation';
 import { activeRespiratoryInterface, type OxygenVisualMode } from '@/lib/respiratoryEquipment';
@@ -484,6 +485,7 @@ const RESP001_CONTACT_POSITIONS: Record<string, [number, number, number]> = {
   'llq-detail': [0.075, 1.095, 0.245],
   'umbilicus-detail': [0, 1.15, 0.255],
 };
+const RESP001_VILLA_RUG_TOP_Y = 0.032;
 const RESP001_EXAM_LANDMARKS = EXAM_LANDMARKS.map(marker => ({
   ...marker, position: RESP001_CONTACT_POSITIONS[marker.id] ?? marker.position,
 }));
@@ -556,6 +558,7 @@ function TreatmentBayImmersionLayer({
   faceAttachment = null,
   showWallMonitor = true,
   seatedSupportLift = 0,
+  equipmentGroundY = -0.045,
 }: {
   appliedTreatmentIds: string[];
   active: boolean;
@@ -567,6 +570,7 @@ function TreatmentBayImmersionLayer({
   faceAttachment?: THREE.Group | null;
   showWallMonitor?: boolean;
   seatedSupportLift?: number;
+  equipmentGroundY?: number;
 }) {
   const equipment = useMemo(
     () => buildTreatmentEquipmentState(appliedTreatmentIds),
@@ -589,8 +593,8 @@ function TreatmentBayImmersionLayer({
   const oxygenShoulderRoute = clinicalPoint([0.27, 1.30, 0.14]);
   const uprightPatient = posture === 'tripod' || posture === 'seated' || posture === 'legs-elevated' || mobility === 'standing' || mobility === 'pacing';
   const oxygenCylinderZ = uprightPatient ? 0.72 : (fittedTubeExit?.[2] ?? legacyOxygenFace[2]) + 0.16;
-  const oxygenCylinderBase: [number, number, number] = [0.66, -0.045, oxygenCylinderZ];
-  const oxygenRegulator: [number, number, number] = [0.66, 0.43, oxygenCylinderZ];
+  const oxygenCylinderBase: [number, number, number] = [0.66, equipmentGroundY, oxygenCylinderZ];
+  const oxygenRegulator: [number, number, number] = [0.66, equipmentGroundY + 0.475, oxygenCylinderZ];
   const chestLeft = clinicalPoint([-0.03, 1.23, 0.25]);
   const chestRight = clinicalPoint([0.15, 1.15, 0.25]);
   const ivSite = clinicalPoint([-0.23, 0.82, 0.24]);
@@ -4640,7 +4644,7 @@ function getPatientReaction(
     };
   }
 
-  if (actionId.includes('palpate') && /tender|pain|sore|guard|rigid|rebound|crepitus|deform|fracture|swelling|unstable|bruise|contusion|burn/.test(lowerFinding)) {
+  if (actionId.includes('palpate') && hasPainfulPalpationFinding(finding)) {
     return {
       ...reactionBase,
       id: `${actionId}-pain-response`,
@@ -6703,6 +6707,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
 
               <TreatmentBayImmersionLayer
                 seatedSupportLift={seatedSupportLift}
+                equipmentGroundY={caseData.id === 'resp-001' ? RESP001_VILLA_RUG_TOP_Y : undefined}
                 faceAttachment={faceAttachment}
                 showWallMonitor={caseData.id !== 'resp-001'}
                 appliedTreatmentIds={appliedTreatmentIds}
