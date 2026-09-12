@@ -39,6 +39,7 @@ import { patientWalkingPath } from '@/lib/patientWalkingPath';
 import { tripodHandBraceSweep, TRIPOD_BRACE_CALIBRATION } from '@/lib/tripodHandBrace';
 import { skinDetailProfileForPilot, type SkinDetailProfile } from './resp001SkinDetail';
 import { withResp001LipArticulationMorph } from './resp001LipArticulation';
+import { createEyeMorphFollower } from './eyeMorphFollow';
 import {
   patientSkeletalAction,
   patientArmRestRadians,
@@ -998,8 +999,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
 
   // Clone the rig with SkeletonUtils so skinned meshes keep their own bone
   // bindings. A regular deep clone can detach limbs on some exported GLBs.
-  const clonedScene = useMemo(() => {
+  const { clonedScene, updateEyeMorphs } = useMemo(() => {
     const clone = cloneSkeleton(scene) as THREE.Group;
+    let updateEyeMorphs = () => {};
     const isMaleMesh = modelPath.includes('-male.glb');
     const useSolidMaleBodyMaterial = modelPath === '/models/patient-male.glb';
     // Both active exam meshes are normalised to face the default camera (+Z).
@@ -1243,6 +1245,13 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
             }
           };
           body.add(lids);
+          updateEyeMorphs = createEyeMorphFollower(clone, body, lids);
+          // Keep direct renders coherent too: the eye can be drawn before the
+          // body/lids, so syncing from the body's render callback is too late.
+          for (const name of EYE_NODE_NAMES) {
+            const eyePart = clone.getObjectByName(name) as THREE.Mesh | undefined;
+            if (eyePart) eyePart.onBeforeRender = updateEyeMorphs;
+          }
         }
 
         // Case wounds — drawn INTO the freshly-stashed atlases so the blink
@@ -1321,7 +1330,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       // dressing is cosmetic; the exam continues undressed
     }
     createFaceAttachment(clone, patientScale);
-    return clone;
+    return { clonedScene: clone, updateEyeMorphs };
     // surfaceOpacity & pupil sizes are deliberately omitted from deps: a
     // Skin/Skeleton toggle or pupil change must NOT rebuild the clone (mesh +
     // scrubs + 2048² eye texture repaint). Opacity is applied live by the
@@ -2099,6 +2108,14 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         }
       }
     }
+  });
+
+  // Registered after the main animation callback so it consumes this frame's
+  // clinical morph weights; render callbacks also cover explicit render calls.
+  useFrame(() => {
+    if (!pilotEyelidScene) return;
+    clonedScene.updateMatrixWorld(true);
+    updateEyeMorphs();
   });
 
   const toClinicalPoint = useCallback((worldPoint: THREE.Vector3): THREE.Vector3 => {
