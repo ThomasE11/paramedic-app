@@ -1197,6 +1197,11 @@ function classifyHazard(label: string): string {
   return 'access';
 }
 
+export function hasReviewedEveryHazard(hazardIds: string[], selectedHazards: string[]): boolean {
+  if (hazardIds.length === 0) return selectedHazards.includes('none');
+  return hazardIds.every(id => selectedHazards.includes(id));
+}
+
 function buildHazardHotspots(caseData: CaseScenario): HazardHotspot[] {
   return visibleSceneHazards(caseData)
     .map((hazard, index) => {
@@ -1711,6 +1716,8 @@ function SceneArrivalVisual({
                 type="button"
                 onClick={() => onHazardToggle?.(id)}
                 disabled={!isClickable}
+                aria-pressed={isClickable ? selected : undefined}
+                aria-label={`${selected ? 'Acknowledged' : 'Identify hazard'}: ${label}`}
                 className={`absolute z-20 max-w-[150px] -translate-x-1/2 -translate-y-1/2 rounded-xl border px-2.5 py-1.5 text-left text-[10px] leading-tight shadow-xl transition-all ${
                   selected
                     ? 'border-amber-200 bg-amber-300 text-slate-950'
@@ -1829,12 +1836,16 @@ export function SceneSurveyPanel({ caseData, onEnterScene, onBack }: SceneSurvey
         // AND the scene has either been declared safe after review or declared
         // unsafe with a hazard identified and extra resources requested.
         if (!mandatoryPpe.every((id) => ppeSelected.includes(id))) return false;
-        if (sceneSafe === true) return hazardsIdentified.length > 0;
-        if (sceneSafe === false) return hazardsIdentified.filter(h => h !== 'none').length > 0 && resourcesRequested.length > 0;
+        // A single click must not satisfy a multi-hazard scene. Require the
+        // learner to sweep and acknowledge every authored visual hotspot.
+        const hazardsReviewed = hasReviewedEveryHazard(hazardHotspots.map(hazard => hazard.id), hazardsIdentified);
+        if (!hazardsReviewed) return false;
+        if (sceneSafe === true) return true;
+        if (sceneSafe === false) return resourcesRequested.length > 0;
         return false;
       }
     }
-  }, [step, hazardsIdentified, sceneSafe, resourcesRequested, ppeSelected, mandatoryPpe]);
+  }, [step, hazardHotspots, hazardsIdentified, sceneSafe, resourcesRequested, ppeSelected, mandatoryPpe]);
 
   const goNext = () => {
     if (!canAdvance) return;

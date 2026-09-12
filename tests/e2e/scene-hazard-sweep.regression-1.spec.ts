@@ -15,6 +15,21 @@ async function openPilotHazardSweep(page: import('@playwright/test').Page) {
   await expect(page.getByText('Scene Hazards & PPE', { exact: true })).toBeVisible();
 }
 
+async function openOrganophosphateHazardSweep(page: import('@playwright/test').Page) {
+  await page.addInitScript(() => {
+    window.localStorage.setItem('paramedic-studio-tour-completed', 'true');
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: /Start Training/i }).first().click();
+  await page.getByRole('button', { name: '4th Year', exact: true }).click();
+  await page.getByRole('button', { name: /Condition practice.*Search a diagnosis/i }).click();
+  await page.getByPlaceholder('STEMI, asthma, pneumothorax, anaphylaxis...').fill('Organophosphate');
+  await page.getByRole('button', { name: 'Organophosphate poisoning 1 case', exact: true }).click();
+  await page.getByRole('button', { name: /Begin Scene Survey/i }).click();
+  await page.getByRole('button', { name: /^Next$/ }).click();
+  await expect(page.getByText('Scene Hazards & PPE', { exact: true })).toBeVisible();
+}
+
 test('clear scene keeps the photograph unobscured and requires a deliberate sweep', async ({ page }) => {
   await openPilotHazardSweep(page);
 
@@ -48,4 +63,28 @@ test('clear scene keeps the photograph unobscured and requires a deliberate swee
   await expect(safe).toHaveAttribute('aria-pressed', 'true');
   await expect(enterScene).toBeEnabled();
   await expect(enterScene).toHaveClass(/bg-green-600/);
+});
+
+test('hazardous scenes require every authored hotspot before entry', async ({ page }) => {
+  await openOrganophosphateHazardSweep(page);
+
+  const enterScene = page.getByRole('button', { name: /^Enter Scene/ });
+  const safe = page.getByRole('button', { name: /Scene is safe/i });
+  const chemical = page.getByRole('button', { name: /Identify hazard: CHEMICAL CONTAMINATION/i });
+  const exposedWorkers = page.getByRole('button', { name: /Identify hazard: Other workers potentially affected/i });
+
+  await expect(chemical).toHaveAttribute('aria-pressed', 'false');
+  await expect(exposedWorkers).toHaveAttribute('aria-pressed', 'false');
+  await chemical.click();
+  await expect(page.getByRole('button', { name: /Acknowledged: CHEMICAL CONTAMINATION/i })).toHaveAttribute('aria-pressed', 'true');
+
+  await safe.click();
+  for (const ppe of ['Gloves', 'Surgical mask', 'Eye protection', 'Gown / apron']) {
+    await expect(page.getByRole('button', { name: new RegExp(`${ppe}.*Required`, 'i') })).toHaveAttribute('aria-pressed', 'true');
+  }
+  await expect(enterScene).toBeDisabled();
+
+  await exposedWorkers.click();
+  await expect(page.getByRole('button', { name: /Acknowledged: Other workers potentially affected/i })).toHaveAttribute('aria-pressed', 'true');
+  await expect(enterScene).toBeEnabled();
 });

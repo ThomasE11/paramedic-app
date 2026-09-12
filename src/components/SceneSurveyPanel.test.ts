@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CaseScenario } from '@/types';
-import { buildArrivalSentence, sceneSurveySetting } from './SceneSurveyPanel';
+import { buildArrivalSentence, hasReviewedEveryHazard, sceneSurveySetting } from './SceneSurveyPanel';
 
 function caseWith(callReason: string): CaseScenario {
   return {
@@ -30,7 +30,20 @@ describe('scene arrival sentence', () => {
   });
 });
 
-describe('scene survey setting', () => {
+describe('hasReviewedEveryHazard', () => {
+  it('requires every authored hotspot before the survey is complete', () => {
+    expect(hasReviewedEveryHazard(['chemical-1', 'access-2'], [])).toBe(false);
+    expect(hasReviewedEveryHazard(['chemical-1', 'access-2'], ['chemical-1'])).toBe(false);
+    expect(hasReviewedEveryHazard(['chemical-1', 'access-2'], ['chemical-1', 'access-2'])).toBe(true);
+  });
+
+  it('requires an explicit clear-scene sweep when no hotspot is authored', () => {
+    expect(hasReviewedEveryHazard([], [])).toBe(false);
+    expect(hasReviewedEveryHazard([], ['none'])).toBe(true);
+  });
+});
+
+describe('sceneSurveySetting', () => {
   it.each([
     ['roadside', 'road'],
     ['industrial', 'industrial'],
