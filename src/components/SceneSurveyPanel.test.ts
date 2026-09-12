@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CaseScenario } from '@/types';
-import { buildArrivalSentence } from './SceneSurveyPanel';
+import { buildArrivalSentence, sceneSurveySetting } from './SceneSurveyPanel';
 
 function caseWith(callReason: string): CaseScenario {
   return {
@@ -27,5 +27,30 @@ describe('scene arrival sentence', () => {
     } as CaseScenario;
     expect(buildArrivalSentence(pilot))
       .toBe('On arrival, you find a 19-year-old male who cannot breathe.');
+  });
+});
+
+describe('scene survey setting', () => {
+  it.each([
+    ['roadside', 'road'],
+    ['industrial', 'industrial'],
+    ['agricultural', 'industrial'],
+    ['home', 'home'],
+    ['fire', 'fire'],
+    ['heat', 'fire'],
+    ['public', 'public'],
+    ['water', 'public'],
+    ['clinic', 'medical'],
+  ] as const)('maps authored %s scenes to %s survey dressing', (environmentVariant, expected) => {
+    const sceneCase = {
+      ...caseWith('Patient unresponsive after collapse'),
+      sceneInfo: { environmentVariant },
+    } as CaseScenario;
+
+    expect(sceneSurveySetting(sceneCase)).toBe(expected);
+  });
+
+  it('leaves legacy scenes to the text fallback', () => {
+    expect(sceneSurveySetting(caseWith('Motorcycle collision'))).toBeNull();
   });
 });

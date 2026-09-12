@@ -301,7 +301,30 @@ function buildApproachNarration(c: CaseScenario): string {
   return parts.join(' ');
 }
 
+export function sceneSurveySetting(caseData: CaseScenario): SceneTone['setting'] | null {
+  switch (caseData.sceneInfo?.environmentVariant) {
+    case 'roadside':
+      return 'road';
+    case 'industrial':
+    case 'agricultural':
+      return 'industrial';
+    case 'home':
+      return 'home';
+    case 'fire':
+    case 'heat':
+      return 'fire';
+    case 'public':
+    case 'water':
+      return 'public';
+    case 'clinic':
+      return 'medical';
+    default:
+      return null;
+  }
+}
+
 function inferSceneTone(caseData: CaseScenario): SceneTone {
+  const authoredSetting = sceneSurveySetting(caseData);
   const haystack = [
     caseData.category,
     caseData.subcategory,
@@ -313,7 +336,7 @@ function inferSceneTone(caseData: CaseScenario): SceneTone {
     caseData.initialPresentation?.position,
   ].join(' ').toLowerCase();
 
-  if (/traffic|road|street|vehicle|mvc|collision/.test(haystack)) {
+  if (authoredSetting === 'road' || (!authoredSetting && /traffic|road|street|vehicle|mvc|collision/.test(haystack))) {
     return {
       gradient: 'from-slate-950 via-blue-950 to-slate-900',
       accent: 'bg-blue-400',
@@ -323,7 +346,7 @@ function inferSceneTone(caseData: CaseScenario): SceneTone {
       setting: 'road',
     };
   }
-  if (/construction|industrial|factory|warehouse|machinery|worksite/.test(haystack)) {
+  if (authoredSetting === 'industrial' || (!authoredSetting && /construction|industrial|factory|warehouse|machinery|worksite/.test(haystack))) {
     return {
       gradient: 'from-stone-950 via-zinc-950 to-slate-900',
       accent: 'bg-yellow-300',
@@ -333,7 +356,7 @@ function inferSceneTone(caseData: CaseScenario): SceneTone {
       setting: 'industrial',
     };
   }
-  if (/\b(fire|burn|heat|smoke|scald)\b/.test(haystack)) {
+  if (authoredSetting === 'fire' || (!authoredSetting && /\b(fire|burn|heat|smoke|scald)\b/.test(haystack))) {
     return {
       gradient: 'from-orange-950 via-slate-950 to-slate-900',
       accent: 'bg-orange-400',
@@ -343,7 +366,7 @@ function inferSceneTone(caseData: CaseScenario): SceneTone {
       setting: 'fire',
     };
   }
-  if (/violence|weapon|police|threat|shouting|agitated|psychiatric/.test(haystack)) {
+  if (authoredSetting === 'public' || (!authoredSetting && /violence|weapon|police|threat|shouting|agitated|psychiatric/.test(haystack))) {
     return {
       gradient: 'from-slate-950 via-amber-950 to-stone-950',
       accent: 'bg-amber-400',
@@ -353,7 +376,7 @@ function inferSceneTone(caseData: CaseScenario): SceneTone {
       setting: 'public',
     };
   }
-  if (/drowsy|lethargic|slumped|altered|unresponsive|confused/.test(haystack)) {
+  if (authoredSetting === 'medical' || (!authoredSetting && /drowsy|lethargic|slumped|altered|unresponsive|confused/.test(haystack))) {
     return {
       gradient: 'from-slate-950 via-teal-950 to-slate-900',
       accent: 'bg-teal-300',
@@ -363,7 +386,7 @@ function inferSceneTone(caseData: CaseScenario): SceneTone {
       setting: 'medical',
     };
   }
-  if (/respiratory|breathless|short of breath|difficulty breathing|asthma|copd|cyanotic|tripod|wheeze/.test(haystack)) {
+  if (!authoredSetting && /respiratory|breathless|short of breath|difficulty breathing|asthma|copd|cyanotic|tripod|wheeze/.test(haystack)) {
     return {
       gradient: 'from-cyan-950 via-slate-950 to-slate-900',
       accent: 'bg-cyan-300',
@@ -373,7 +396,7 @@ function inferSceneTone(caseData: CaseScenario): SceneTone {
       setting: 'medical',
     };
   }
-  if (/home|apartment|villa|room|bed/.test(haystack)) {
+  if (authoredSetting === 'home' || (!authoredSetting && /home|apartment|villa|room|bed/.test(haystack))) {
     return {
       gradient: 'from-slate-950 via-violet-950 to-slate-900',
       accent: 'bg-violet-300',
