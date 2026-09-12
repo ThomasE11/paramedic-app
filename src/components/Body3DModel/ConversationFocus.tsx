@@ -1,8 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { DepthOfField, EffectComposer, ToneMapping } from '@react-three/postprocessing';
-import { ToneMappingMode, type DepthOfFieldEffect, type EffectComposer as Composer } from 'postprocessing';
-import { Vector3, type Group } from 'three';
+import { DepthOfFieldEffect, EffectComposer, EffectPass, RenderPass, ToneMappingEffect, ToneMappingMode } from 'postprocessing';
+import { HalfFloatType, NoToneMapping, Vector3, type Group } from 'three';
 
 function FaceFocus({ active, face, effect }: {
   active: boolean;
@@ -37,30 +36,32 @@ function FaceFocus({ active, face, effect }: {
  * AO/upscale stack; the adaptive ladder can unmount this whole component. */
 export function ConversationFocus({ active, face }: { active: boolean; face: Group | null }) {
   const effect = useRef<DepthOfFieldEffect | null>(null);
-  const composer = useRef<Composer | null>(null);
-  const lifecycle = useRef({ generation: 0 });
-  const gl = useThree(state => state.gl);
-  // The composer constructor disables auto-clear, but the React wrapper only
-  // restores tone mapping. Capture the direct renderer state before mounting it.
-  const originalAutoClear = useRef(gl.autoClear);
+  const composer = useRef<EffectComposer | null>(null);
+  const { gl, scene, camera, size } = useThree();
+  // Own allocation and disposal in the same effect. The React composer wrapper
+  // memoises an instance across effect replay / Suspense reconnection; disposing
+  // that instance externally can leave its next addPass with a null renderer.
+  // Each setup here creates a fresh, complete pipeline; cleanup owns all passes.
   useEffect(() => {
-    const autoClear = originalAutoClear.current;
-    const instance = composer.current;
-    const lifetime = lifecycle.current;
-    const generation = ++lifetime.generation;
+    const autoClear = gl.autoClear;
+    const toneMapping = gl.toneMapping;
+    gl.toneMapping = NoToneMapping;
+    const instance = new EffectComposer(gl, { multisampling: 0, frameBufferType: HalfFloatType });
+    const focus = new DepthOfFieldEffect(camera, { bokehScale: 0 });
+    const tone = new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC });
+    instance.addPass(new RenderPass(scene, camera));
+    instance.addPass(new EffectPass(camera, focus, tone));
+    composer.current = instance;
+    effect.current = focus;
     return () => {
+      composer.current = null;
+      effect.current = null;
+      instance.dispose();
       gl.autoClear = autoClear;
-      // The wrapper removes passes but retains its own render/depth buffers.
-      // Defer disposal past React's synchronous StrictMode effect replay so
-      // the replay can keep using the same composer; real unmounts release it.
-      queueMicrotask(() => {
-        if (lifetime.generation === generation) instance?.dispose();
-      });
+      gl.toneMapping = toneMapping;
     };
-  }, [gl]);
-  return <EffectComposer ref={composer} multisampling={0}>
-    <FaceFocus active={active} face={face} effect={effect} />
-    <DepthOfField ref={effect} focusDistance={2} focusRange={1.2} bokehScale={0} />
-    <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
-  </EffectComposer>;
+  }, [gl, scene, camera]);
+  useEffect(() => { composer.current?.setSize(size.width, size.height); }, [size.width, size.height, gl, camera, scene]);
+  useFrame((_, delta) => { composer.current?.render(delta); }, 1);
+  return <FaceFocus active={active} face={face} effect={effect} />;
 }
