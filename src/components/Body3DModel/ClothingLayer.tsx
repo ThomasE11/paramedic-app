@@ -91,6 +91,11 @@ export interface GarmentGlbSpec {
   name: string;
   color: string;
   offset: number;
+  /**
+   * Optional case/profile-owned downward extension for the authored shirt hem.
+   * Omit it to retain the generic seated-hip seam closure.
+   */
+  hemDrop?: number;
 }
 
 /**
@@ -126,7 +131,11 @@ export const GARMENT_GLBS: GarmentGlbSpec[] = [
  * BodyMesh selects this only for that case; all other adults retain GARMENT_GLBS.
  */
 export const RESP001_GARMENT_GLBS: GarmentGlbSpec[] = [
-  GARMENT_GLBS[0],
+  // The tripod morph already carries this shirt's hem forward and down. The
+  // generic base-only drop would therefore become an unowned hip flap here;
+  // retain the exact shared GLB (and its clinical morph targets), but opt out
+  // of that runtime seam correction for this one patient profile.
+  { ...GARMENT_GLBS[0], hemDrop: 0 },
   { url: '/models/garment-trousers-resp001.glb', name: 'scrub-trousers', color: TROUSER_COLOR, offset: 0.002 },
 ];
 
@@ -143,6 +152,11 @@ export const ALL_GARMENT_GLBS = [
 ];
 export const ADOLESCENT_MALE_GARMENT_GLBS = [GARMENT_GLBS[1]];
 export const ADOLESCENT_FEMALE_GARMENT_GLBS = [FEMALE_GARMENT_GLBS[1]];
+
+/** The generic waist closure remains the default unless a profile owns it. */
+export function shirtHemDropForSpec(spec: GarmentGlbSpec): number {
+  return spec.hemDrop ?? SHIRT_HEM_DROP;
+}
 
 export function garmentGlbsForModel(modelPath: string): GarmentGlbSpec[] {
   // The Blender garments are adult male/female shells. Rebinding their bones
@@ -734,7 +748,7 @@ export function buildBlendedGarments(
     const seam = spec.name === 'scrub-trousers'
       ? { shift: WAISTBAND_RISE, fraction: WAISTBAND_BAND_FRACTION, fromTop: true }
       : spec.name === 'scrub-top'
-        ? { shift: -SHIRT_HEM_DROP, fraction: SHIRT_HEM_BAND_FRACTION, fromTop: false }
+        ? { shift: -shirtHemDropForSpec(spec), fraction: SHIRT_HEM_BAND_FRACTION, fromTop: false }
         : null;
 
     if (seam) {
