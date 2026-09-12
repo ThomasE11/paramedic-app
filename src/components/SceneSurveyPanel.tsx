@@ -1924,16 +1924,28 @@ export function SceneSurveyPanel({ caseData, onEnterScene, onBack }: SceneSurvey
               <p className="text-sm font-semibold">Commit your scene safety decision</p>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button
-                  variant={sceneSafe === true ? 'default' : 'outline'}
+                  variant="outline"
                   onClick={() => { setSceneSafe(true); setResourcesRequested([]); }}
-                  className="flex-1 gap-2"
+                  aria-pressed={sceneSafe === true}
+                  style={sceneSafe === true ? { background: '#059669', borderColor: '#047857', color: '#ffffff' } : undefined}
+                  className={`flex-1 gap-2 border-2 py-5 font-semibold ${
+                    sceneSafe === true
+                      ? '!border-emerald-600 !bg-emerald-600 !text-white shadow-md hover:!bg-emerald-700 hover:!text-white [&_svg]:!text-white'
+                      : 'border-emerald-300 bg-emerald-50/70 text-emerald-900 hover:border-emerald-500 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-100'
+                  }`}
                 >
                   <Shield className="h-4 w-4" /> Scene is safe - proceed
                 </Button>
                 <Button
-                  variant={sceneSafe === false ? 'default' : 'outline'}
+                  variant="outline"
                   onClick={() => setSceneSafe(false)}
-                  className={`flex-1 gap-2 ${sceneSafe === false ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
+                  aria-pressed={sceneSafe === false}
+                  style={sceneSafe === false ? { background: '#d97706', borderColor: '#b45309', color: '#ffffff' } : undefined}
+                  className={`flex-1 gap-2 border-2 py-5 font-semibold ${
+                    sceneSafe === false
+                      ? '!border-amber-600 !bg-amber-600 !text-white shadow-md hover:!bg-amber-700 hover:!text-white [&_svg]:!text-white'
+                      : 'border-amber-300 bg-amber-50/70 text-amber-950 hover:border-amber-500 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-100'
+                  }`}
                 >
                   <AlertTriangle className="h-4 w-4" /> Scene is unsafe - request resources
                 </Button>
@@ -2010,11 +2022,19 @@ export function SceneSurveyPanel({ caseData, onEnterScene, onBack }: SceneSurvey
         <Button
           onClick={goNext}
           disabled={!canAdvance}
+          variant={step === 'hazards' ? 'outline' : 'default'}
           size="lg"
+          style={step === 'hazards'
+            ? canAdvance
+              ? { background: '#16a34a', borderColor: '#15803d', color: '#ffffff' }
+              : { background: '#e2e8f0', borderColor: '#cbd5e1', color: '#475569' }
+            : undefined}
           className={`flex-1 gap-2 rounded-xl shadow-sm transition-all ${
-            step === 'hazards'
-              ? 'bg-green-600 hover:bg-green-700 text-white hover:-translate-y-0.5'
-              : ''
+            step === 'hazards' && canAdvance
+              ? '!bg-green-600 !text-white hover:!bg-green-700 hover:-translate-y-0.5 [&_svg]:!text-white'
+              : step === 'hazards'
+                ? '!border !border-slate-300 !bg-slate-100 !text-slate-500 shadow-none opacity-70 dark:!border-slate-700 dark:!bg-slate-900 dark:!text-slate-400'
+                : ''
           }`}
         >
           {step === 'hazards' ? 'Enter Scene' : 'Next'}

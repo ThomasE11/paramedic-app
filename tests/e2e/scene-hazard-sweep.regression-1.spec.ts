@@ -28,6 +28,17 @@ test('clear scene keeps the photograph unobscured and requires a deliberate swee
   await expect(clearSweep).toHaveAttribute('aria-pressed', 'true');
 
   const decision = page.getByText('Commit your scene safety decision', { exact: true }).locator('..');
-  await expect(decision.getByRole('button', { name: /Scene is safe/i })).toBeVisible();
-  await expect(decision.getByRole('button', { name: /Scene is unsafe/i })).toBeVisible();
+  const safe = decision.getByRole('button', { name: /Scene is safe/i });
+  const unsafe = decision.getByRole('button', { name: /Scene is unsafe/i });
+  await expect(safe).toHaveAttribute('aria-pressed', 'false');
+  await expect(unsafe).toHaveAttribute('aria-pressed', 'false');
+
+  const enterScene = page.getByRole('button', { name: /^Enter Scene/ });
+  await expect(enterScene).toBeDisabled();
+  await expect(enterScene).toHaveClass(/bg-slate-100/);
+
+  await safe.click();
+  await expect(safe).toHaveAttribute('aria-pressed', 'true');
+  await expect(enterScene).toBeEnabled();
+  await expect(enterScene).toHaveClass(/bg-green-600/);
 });
