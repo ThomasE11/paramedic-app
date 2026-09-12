@@ -4579,8 +4579,10 @@ function PatientReactionCard({ reaction }: { reaction: PatientReaction | null })
 
 function ObserveQuickActions({
   onCue,
+  referenceScene = false,
 }: {
   onCue: (cue: 'look' | 'listen' | 'feel') => void;
+  referenceScene?: boolean;
 }) {
   const cues: Array<{
     id: 'look' | 'listen' | 'feel';
@@ -4614,7 +4616,7 @@ function ObserveQuickActions({
 
   return (
     <div
-      className="patient-observe-quick-actions pointer-events-auto absolute left-1/2 top-3 z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/15 bg-slate-950/72 px-2 py-1.5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.95)] backdrop-blur-xl"
+      className={`patient-observe-quick-actions pointer-events-auto absolute left-1/2 top-3 z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/15 ${referenceScene ? 'bg-slate-950/95' : 'bg-slate-950/72'} px-2 py-1.5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.95)] backdrop-blur-xl`}
       role="group"
       aria-label="Observe the patient — Look, Listen, Feel"
     >
@@ -6642,7 +6644,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
             )}
 
             {treatmentBayOverviewEnabled && !activeRegion && (
-              <ObserveQuickActions onCue={handleObserveCue} />
+              <ObserveQuickActions onCue={handleObserveCue} referenceScene={caseData.id === 'resp-001'} />
             )}
 
             {/* Floating deselect — effortless "back to full body" while focused */}
