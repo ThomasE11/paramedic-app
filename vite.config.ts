@@ -2,6 +2,8 @@ import path from "path"
 import react from "@vitejs/plugin-react"
 import { defineConfig, loadEnv, type Plugin } from "vite"
 
+import { requestGatewaySpeech } from "./api/tts/gatewaySpeech"
+
 type VoiceRole = 'dispatcher' | 'patient' | 'narrator'
 type PatientVoiceProfile = { gender?: 'male' | 'female' }
 
@@ -68,7 +70,7 @@ function ttsProxy(env: Record<string, string>): Plugin {
   // Vercel AI Gateway (OpenAI speech) mid-tier.
   const GATEWAY_KEY = (env.AI_GATEWAY_API_KEY || process.env.AI_GATEWAY_API_KEY || '').trim()
   const GATEWAY_MODEL = env.AI_GATEWAY_TTS_MODEL || process.env.AI_GATEWAY_TTS_MODEL || 'openai/tts-1'
-  const GATEWAY_BASE = (env.AI_GATEWAY_BASE_URL || process.env.AI_GATEWAY_BASE_URL || 'https://ai-gateway.vercel.sh/v1').replace(/\/$/, '')
+  const GATEWAY_BASE = (env.AI_GATEWAY_BASE_URL || process.env.AI_GATEWAY_BASE_URL || 'https://ai-gateway.vercel.sh/v4/ai').replace(/\/$/, '')
   const HAS_GATEWAY = GATEWAY_KEY.length > 0
 
   async function elevenLabsAudio(
@@ -108,27 +110,13 @@ function ttsProxy(env: Record<string, string>): Plugin {
     patientVoice?: PatientVoiceProfile,
   ): Promise<Buffer | null> {
     if (!HAS_GATEWAY) return null
-    try {
-      const upstream = await fetch(`${GATEWAY_BASE}/audio/speech`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${GATEWAY_KEY}`,
-          'Content-Type': 'application/json',
-          Accept: 'audio/mpeg',
-        },
-        body: JSON.stringify({
-          model: GATEWAY_MODEL,
-          voice: resolveProxyVoice(env, 'ai-gateway', role, patientVoice),
-          input: text,
-          response_format: 'mp3',
-        }),
-      })
-      if (!upstream.ok) return null
-      const audio = Buffer.from(await upstream.arrayBuffer())
-      return audio.byteLength >= 64 ? audio : null
-    } catch {
-      return null
-    }
+    return requestGatewaySpeech({
+      baseUrl: GATEWAY_BASE,
+      apiKey: GATEWAY_KEY,
+      model: GATEWAY_MODEL,
+      voice: resolveProxyVoice(env, 'ai-gateway', role, patientVoice),
+      text,
+    })
   }
 
   return {

@@ -1,5 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
+import { requestGatewaySpeech } from './gatewaySpeech';
+
 type VoiceRole = 'dispatcher' | 'patient' | 'narrator';
 type PatientVoiceProfile = { gender?: 'male' | 'female' };
 
@@ -23,12 +25,14 @@ const ELEVENLABS_PATIENT_MALE_VOICE =
 // Vercel AI Gateway (OpenAI speech) — the mid-tier between ElevenLabs and the
 // client-side fallbacks. Auth uses AI_GATEWAY_API_KEY; on Vercel the OIDC
 // token can also authenticate automatically when the Gateway is attached.
-// https://vercel.com/docs/ai-gateway — OpenAI-compatible /audio/speech.
+// https://vercel.com/docs/ai-gateway — native speech protocol for the
+// official host, with OpenAI-compatible /audio/speech retained for custom
+// gateways.
 // ---------------------------------------------------------------------------
 const GATEWAY_API_KEY = process.env.AI_GATEWAY_API_KEY?.trim() || '';
 const GATEWAY_TTS_MODEL = process.env.AI_GATEWAY_TTS_MODEL || 'openai/tts-1';
 const GATEWAY_BASE_URL =
-  (process.env.AI_GATEWAY_BASE_URL || 'https://ai-gateway.vercel.sh/v1').replace(/\/$/, '');
+  (process.env.AI_GATEWAY_BASE_URL || 'https://ai-gateway.vercel.sh/v4/ai').replace(/\/$/, '');
 // OpenAI speech voices — kept distinct so the role→voice mapping survives the
 // fall-through. 'alloy'/'verse' read neutral-male; 'shimmer'/'nova' female.
 const GATEWAY_VOICES: Record<VoiceRole, string> = {
@@ -128,26 +132,13 @@ async function synthesiseWithGateway(
   patientVoice?: PatientVoiceProfile,
 ): Promise<Buffer | null> {
   if (!GATEWAY_API_KEY) return null;
-  const model = GATEWAY_TTS_MODEL;
-
-  const upstream = await fetch(`${GATEWAY_BASE_URL}/audio/speech`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${GATEWAY_API_KEY}`,
-      'Content-Type': 'application/json',
-      Accept: 'audio/mpeg',
-    },
-    body: JSON.stringify({
-      model,
-      voice: resolveTtsVoice('ai-gateway', role, patientVoice),
-      input: text,
-      response_format: 'mp3',
-    }),
+  return requestGatewaySpeech({
+    baseUrl: GATEWAY_BASE_URL,
+    apiKey: GATEWAY_API_KEY,
+    model: GATEWAY_TTS_MODEL,
+    voice: resolveTtsVoice('ai-gateway', role, patientVoice),
+    text,
   });
-
-  if (!upstream.ok) return null;
-  const audio = Buffer.from(await upstream.arrayBuffer());
-  return audio.byteLength >= 64 ? audio : null;
 }
 
 export default async function handler(req: BodyCarrier, res: ServerResponse) {
