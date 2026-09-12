@@ -240,7 +240,7 @@ interface BodyMeshProps {
   skinTint?: THREE.Color | null;
   /**
    * Diaphoresis (sweat sheen) 0..1 — a MATERIAL channel. Ramps the skin
-   * roughness down (0.5 → ~0.18) and the envMapIntensity up (0.65 → ~1.0) as
+   * roughness down (0.5 → 0.34) and the envMapIntensity up (0.65 → 0.78) as
    * it rises, so the HDRI does the wet-glint work. Eased in the frame loop
    * (fast in ~10 s, dries out over ~60 s). Orthogonal to skinTint.
    */
@@ -979,6 +979,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
   // tracks which clone the cache belongs to — same guard pattern as the morph
   // mesh, so a StrictMode double-mount can't cache the discarded clone).
   const diaphoresisEaseRef = useRef(0);
+  const skinDiaphoreticAppliedRef = useRef<boolean | null>(null);
   const skinMatsRef = useRef<Array<{ mat: THREE.MeshStandardMaterial; roughness: number; envMapIntensity: number }>>([]);
   const skinMatRootRef = useRef<THREE.Object3D | null>(null);
   // Mottling: whether the mottled twin textures are currently swapped in, the
@@ -1572,10 +1573,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     });
   }, [clonedScene, surfaceOpacity]);
 
-  // Shock / perfusion appearance: a colour-multiply on the skin (pale grey or
-  // dusky blue) plus a clammy sheen (lower roughness) for diaphoresis. Same body
-  // mesh set as the opacity effect; white tint = normal skin. The base roughness
-  // is captured once so the sheen toggles without clobbering the model's value.
+  // Perfusion only owns colour. The frame loop below is the sole sheen writer:
+  // resetting roughness here on a tint update erased settled diaphoresis,
+  // whose frame loop correctly had no further easing work to do.
   useEffect(() => {
     clonedScene.traverse((o) => {
       const m = o as THREE.Mesh;
@@ -1592,15 +1592,10 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         // leaving the patient with blank mannequin eyes.
         if (!std.color || mat.userData.skipRecolor) continue;
         std.color.set(skinTint ?? '#ffffff');
-        if (std.userData.baseRoughness === undefined && typeof std.roughness === 'number') {
-          std.userData.baseRoughness = std.roughness;
-        }
-        const base = typeof std.userData.baseRoughness === 'number' ? std.userData.baseRoughness : 0.7;
-        std.roughness = skinDiaphoretic ? Math.min(base, 0.32) : base;
         std.needsUpdate = true;
       }
     });
-  }, [clonedScene, skinTint, skinDiaphoretic]);
+  }, [clonedScene, skinTint]);
 
   // Free the GPU resources WE created on the PREVIOUS clone when a new one
   // replaces it (e.g. a male↔female model switch): the scrubs/hit-box
@@ -1925,7 +1920,8 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       // settled scalar (a model swap must re-apply the wet level to the fresh
       // materials — otherwise a sweaty patient looks dry after the swap).
       const cloneChanged = skinMatRootRef.current !== clonedScene;
-      if (cur !== target || cloneChanged) {
+      const binarySheenChanged = skinDiaphoreticAppliedRef.current !== skinDiaphoretic;
+      if (cur !== target || cloneChanged || binarySheenChanged) {
         const perSec = target > cur ? 1 / 10 : 1 / 60; // ramp-in vs dry-out
         const step = perSec * delta;
         const next = target > cur ? Math.min(target, cur + step) : Math.max(target, cur - step);
@@ -1947,6 +1943,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
           skinMatsRef.current = mats;
           skinMatRootRef.current = clonedScene;
         }
+        skinDiaphoreticAppliedRef.current = skinDiaphoretic;
         const e = diaphoresisEaseRef.current;
         for (const entry of skinMatsRef.current) {
           // A wet patient needs a broad, broken sheen—not a lacquered plastic
@@ -1954,7 +1951,12 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
           // and lift the environment reflection only modestly. This is still
           // visibly clammy under the villa key light without turning every
           // limb into a white specular strip.
-          entry.mat.roughness = entry.roughness + (0.34 - entry.roughness) * e;
+          // Retain the legacy boolean's immediate .32 override, but give it
+          // the same writer as continuous sweat. Toggling it off restores the
+          // current eased value, not an unrelated dry-material snapshot.
+          entry.mat.roughness = skinDiaphoretic
+            ? Math.min(entry.roughness, 0.32)
+            : entry.roughness + (0.34 - entry.roughness) * e;
           entry.mat.envMapIntensity = entry.envMapIntensity + (0.78 - entry.envMapIntensity) * e;
         }
       }
