@@ -86,6 +86,7 @@ test('hazardous scenes require every authored hotspot before entry', async ({ pa
   await expect(page.getByRole('button', { name: /Acknowledged: CHEMICAL CONTAMINATION/i })).toHaveAttribute('aria-pressed', 'true');
 
   await safe.click();
+  await expect(page.getByRole('status')).toHaveText('Identify every visible hazard on this scene.');
   const requiredPpe = ['Gloves', 'Surgical mask', 'Eye protection', 'Gown / apron'];
   for (const ppe of requiredPpe) {
     await expect(page.getByRole('button', { name: new RegExp(`${ppe}.*Required`, 'i') })).toHaveAttribute('aria-pressed', 'false');
@@ -94,6 +95,7 @@ test('hazardous scenes require every authored hotspot before entry', async ({ pa
 
   await exposedWorkers.click();
   await expect(page.getByRole('button', { name: /Acknowledged: Other workers potentially affected/i })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('status')).toHaveText('Visible hazards remain — declare the scene unsafe and request support.');
   await expect(enterScene).toBeDisabled();
 
   for (const ppe of requiredPpe) {
@@ -108,6 +110,7 @@ test('hazardous scenes require every authored hotspot before entry', async ({ pa
   const unsafe = page.getByRole('button', { name: /Scene is unsafe/i });
   await unsafe.click();
   await expect(unsafe).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('status')).toHaveText('Request at least one additional resource.');
   await expect(enterScene).toBeDisabled();
   await page.getByRole('button', { name: 'HazMat', exact: true }).click();
   await expect(enterScene).toBeEnabled();

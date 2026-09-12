@@ -1202,6 +1202,39 @@ export function hasReviewedEveryHazard(hazardIds: string[], selectedHazards: str
   return hazardIds.every(id => selectedHazards.includes(id));
 }
 
+export function sceneSurveyGateHint({
+  hazardIds,
+  selectedHazards,
+  sceneSafe,
+  resourcesRequested,
+  mandatoryPpe,
+  ppeSelected,
+}: {
+  hazardIds: string[];
+  selectedHazards: string[];
+  sceneSafe: boolean | null;
+  resourcesRequested: string[];
+  mandatoryPpe: string[];
+  ppeSelected: string[];
+}): string {
+  if (!hasReviewedEveryHazard(hazardIds, selectedHazards)) {
+    return hazardIds.length > 0
+      ? 'Identify every visible hazard on this scene.'
+      : 'Complete the visual sweep before declaring the scene safe.';
+  }
+  if (sceneSafe === null) return 'Declare scene safety to continue.';
+  if (hazardIds.length > 0 && sceneSafe === true) {
+    return 'Visible hazards remain — declare the scene unsafe and request support.';
+  }
+  if (sceneSafe === false && resourcesRequested.length === 0) {
+    return 'Request at least one additional resource.';
+  }
+  if (mandatoryPpe.some(id => !ppeSelected.includes(id))) {
+    return 'Select every scene-required PPE item.';
+  }
+  return '';
+}
+
 function buildHazardHotspots(caseData: CaseScenario): HazardHotspot[] {
   return visibleSceneHazards(caseData)
     .map((hazard, index) => {
@@ -1851,6 +1884,15 @@ export function SceneSurveyPanel({ caseData, onEnterScene, onBack }: SceneSurvey
     }
   }, [step, hazardHotspots, hazardsIdentified, sceneSafe, resourcesRequested, ppeSelected, mandatoryPpe]);
 
+  const gateHint = useMemo(() => sceneSurveyGateHint({
+    hazardIds: hazardHotspots.map(hazard => hazard.id),
+    selectedHazards: hazardsIdentified,
+    sceneSafe,
+    resourcesRequested,
+    mandatoryPpe,
+    ppeSelected,
+  }), [hazardHotspots, hazardsIdentified, sceneSafe, resourcesRequested, mandatoryPpe, ppeSelected]);
+
   const goNext = () => {
     if (!canAdvance) return;
     stop();
@@ -2152,11 +2194,8 @@ export function SceneSurveyPanel({ caseData, onEnterScene, onBack }: SceneSurvey
 
       {/* Gating hint */}
       {!canAdvance && step === 'hazards' && (
-        <p className="text-xs text-muted-foreground text-center">
-          {sceneSafe === null && 'Declare scene safety to continue.'}
-          {sceneSafe === false && hazardsIdentified.filter(h => h !== 'none').length === 0 && 'Identify the hazards on this scene.'}
-          {sceneSafe === false && resourcesRequested.length === 0 && hazardsIdentified.filter(h => h !== 'none').length > 0 && 'Request at least one additional resource.'}
-          {sceneSafe !== null && mandatoryPpe.some((id) => !ppeSelected.includes(id)) && 'Select every scene-required PPE item.'}
+        <p className="text-xs text-muted-foreground text-center" role="status">
+          {gateHint}
         </p>
       )}
     </div>

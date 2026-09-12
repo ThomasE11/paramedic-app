@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { CaseScenario } from '@/types';
-import { buildArrivalSentence, hasReviewedEveryHazard, sceneSurveySetting } from './SceneSurveyPanel';
+import {
+  buildArrivalSentence,
+  hasReviewedEveryHazard,
+  sceneSurveyGateHint,
+  sceneSurveySetting,
+} from './SceneSurveyPanel';
 
 function caseWith(callReason: string): CaseScenario {
   return {
@@ -40,6 +45,26 @@ describe('hasReviewedEveryHazard', () => {
   it('requires an explicit clear-scene sweep when no hotspot is authored', () => {
     expect(hasReviewedEveryHazard([], [])).toBe(false);
     expect(hasReviewedEveryHazard([], ['none'])).toBe(true);
+  });
+});
+
+describe('sceneSurveyGateHint', () => {
+  const reviewedHazard = {
+    hazardIds: ['chemical'],
+    selectedHazards: ['chemical'],
+    resourcesRequested: [],
+    mandatoryPpe: ['gloves'],
+    ppeSelected: ['gloves'],
+  };
+
+  it('explains why a safe declaration contradicts an authored hazard', () => {
+    expect(sceneSurveyGateHint({ ...reviewedHazard, sceneSafe: true }))
+      .toBe('Visible hazards remain — declare the scene unsafe and request support.');
+  });
+
+  it('asks for support after an unsafe declaration', () => {
+    expect(sceneSurveyGateHint({ ...reviewedHazard, sceneSafe: false }))
+      .toBe('Request at least one additional resource.');
   });
 });
 
