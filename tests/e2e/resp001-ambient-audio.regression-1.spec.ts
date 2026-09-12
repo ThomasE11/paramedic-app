@@ -1,0 +1,98 @@
+import { expect, test } from '@playwright/test';
+
+type AmbientSnapshot = {
+  room: { playing: boolean; volume: number };
+  ac: { playing: boolean; volume: number };
+  patient: { playing: boolean; volume: number; position: number[]; pannerPosition: number[] };
+  expectedChestPosition: number[];
+  patientRootZ: number;
+  contextState: string;
+  listenerCount: number;
+  emitterCount: number;
+};
+
+test('resp-001 ambient nodes follow mute preference and the positioned chest', async ({ page }) => {
+  test.setTimeout(120_000);
+  let cloudSpeechRequests = 0;
+  page.on('request', request => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/tts') {
+      cloudSpeechRequests += 1;
+    }
+  });
+  await page.addInitScript(() => {
+    localStorage.setItem('paramedic-studio-voice-enabled', 'false');
+  });
+
+  await page.goto('/?devLiveCase=resp-001');
+  await page.waitForFunction(() => window.__r3f?.scene?.getObjectByName('patient-breath'));
+
+  const ambient = () => page.evaluate<AmbientSnapshot>(() => {
+    const { scene, camera } = window.__r3f!;
+    const patient = scene.getObjectByName('patient-breath') as import('three').PositionalAudio;
+    const ac = scene.getObjectByName('villa-ac-hum') as import('three').PositionalAudio;
+    const room = patient.parent!.children.find(child => child.type === 'Audio') as import('three').Audio;
+    const patientRoot = scene.getObjectByName('TreatmentBayPatientRoot')!;
+    const expectedChestPosition = patientRoot.localToWorld(patient.position.clone().set(0, 1.31, 0));
+    let listenerCount = 0;
+    let emitterCount = 0;
+    camera.traverse(object => {
+      if (object.type === 'AudioListener') listenerCount += 1;
+    });
+    scene.traverse(object => {
+      if (object.type === 'Audio' || object.type === 'PositionalAudio') emitterCount += 1;
+    });
+    return {
+      room: { playing: room.isPlaying, volume: room.getVolume() },
+      ac: { playing: ac.isPlaying, volume: ac.getVolume() },
+      patient: {
+        playing: patient.isPlaying,
+        volume: patient.getVolume(),
+        position: patient.position.toArray(),
+        pannerPosition: [
+          patient.panner.positionX.value,
+          patient.panner.positionY.value,
+          patient.panner.positionZ.value,
+        ],
+      },
+      expectedChestPosition: expectedChestPosition.toArray(),
+      patientRootZ: patientRoot.position.z,
+      contextState: patient.context.state,
+      listenerCount,
+      emitterCount,
+    };
+  });
+
+  const initiallyMuted = await ambient();
+  expect(initiallyMuted.room.playing).toBe(true);
+  expect(initiallyMuted.ac.playing).toBe(true);
+  expect(initiallyMuted.patient.playing).toBe(true);
+  expect(initiallyMuted.room.volume).toBe(0);
+  expect(initiallyMuted.ac.volume).toBe(0);
+  expect(initiallyMuted.patient.volume).toBe(0);
+  expect(initiallyMuted.listenerCount).toBe(1);
+  expect(initiallyMuted.emitterCount).toBe(3);
+  expect(initiallyMuted.patient.position[2]).toBeCloseTo(initiallyMuted.patientRootZ, 5);
+  expect(initiallyMuted.patient.position[2]).toBeCloseTo(0.78, 2);
+  expect(initiallyMuted.patient.position[1]).toBeGreaterThan(0.8);
+  expect(initiallyMuted.patient.position[1]).toBeLessThan(1.2);
+  initiallyMuted.patient.position.forEach((coordinate, index) => {
+    expect(coordinate).toBeCloseTo(initiallyMuted.expectedChestPosition[index], 5);
+    expect(initiallyMuted.patient.pannerPosition[index]).toBeCloseTo(coordinate, 5);
+  });
+
+  await page.getByRole('tab', { name: 'History', exact: true }).click();
+  await page.getByRole('button', { name: 'Enable patient voice', exact: true }).click();
+  await expect.poll(async () => (await ambient()).patient.volume).toBeGreaterThan(0);
+  const enabled = await ambient();
+  expect(enabled.room.volume).toBeGreaterThan(0);
+  expect(enabled.ac.volume).toBeGreaterThan(0);
+  expect(enabled.patient.volume).toBeGreaterThan(0);
+
+  await page.getByRole('button', { name: 'Mute patient voice', exact: true }).click();
+  await expect.poll(async () => (await ambient()).patient.volume).toBe(0);
+  const mutedAgain = await ambient();
+  expect(mutedAgain.room.volume).toBe(0);
+  expect(mutedAgain.ac.volume).toBe(0);
+  expect(mutedAgain.patient.volume).toBe(0);
+  expect(cloudSpeechRequests).toBe(0);
+});

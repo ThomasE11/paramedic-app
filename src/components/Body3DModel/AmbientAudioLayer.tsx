@@ -18,18 +18,23 @@
 import { useEffect, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { createAmbientAudio, type AmbientAudioState, type AmbientBreathKind } from '@/lib/ambientAudio';
+import {
+  createAmbientAudio,
+  DEFAULT_AMBIENT_PATIENT_POSITION,
+  type AmbientAudioPosition,
+  type AmbientAudioState,
+  type AmbientBreathKind,
+} from '@/lib/ambientAudio';
 import type { EnvironmentVariant } from '@/lib/sceneEnvironment';
+import {
+  getVoiceEnabledPreference,
+  subscribeVoiceEnabledPreference,
+} from '@/hooks/useVoiceNarration';
 
-const VOICE_PREF_KEY = 'paramedic-studio-voice-enabled';
-
-function ambientAudioAllowed(): boolean {
-  try {
-    const stored = localStorage.getItem(VOICE_PREF_KEY);
-    return stored === null ? true : stored === 'true';
-  } catch {
-    return true;
-  }
+export function bindAmbientAudioToVoicePreference(
+  state: Pick<AmbientAudioState, 'setEnabled'>,
+): () => void {
+  return subscribeVoiceEnabledPreference(state.setEnabled);
 }
 
 interface AmbientAudioLayerProps {
@@ -37,17 +42,29 @@ interface AmbientAudioLayerProps {
   variant: EnvironmentVariant;
   breathKind: AmbientBreathKind;
   breathRpm: number;
+  patientPosition?: AmbientAudioPosition;
 }
 
-export function AmbientAudioLayer({ active, variant, breathKind, breathRpm }: AmbientAudioLayerProps) {
+export function AmbientAudioLayer({
+  active,
+  variant,
+  breathKind,
+  breathRpm,
+  patientPosition = DEFAULT_AMBIENT_PATIENT_POSITION,
+}: AmbientAudioLayerProps) {
   const camera = useThree((s) => s.camera);
   const groupRef = useRef<THREE.Group>(null);
   const stateRef = useRef<AmbientAudioState | null>(null);
+  const [patientX, patientY, patientZ] = patientPosition;
 
   useEffect(() => {
-    if (!active || variant !== 'home' || !ambientAudioAllowed()) return undefined;
-    const state = createAmbientAudio();
+    if (!active || variant !== 'home') return undefined;
+    const state = createAmbientAudio({
+      enabled: getVoiceEnabledPreference(),
+      patientPosition: [patientX, patientY, patientZ],
+    });
     stateRef.current = state;
+    const unsubscribeVoicePreference = bindAmbientAudioToVoicePreference(state);
     camera.add(state.listener);
     const group = groupRef.current;
     if (group) {
@@ -57,6 +74,7 @@ export function AmbientAudioLayer({ active, variant, breathKind, breathRpm }: Am
     }
     state.setPatientBreath(breathKind, breathRpm);
     return () => {
+      unsubscribeVoicePreference();
       state.dispose();
       stateRef.current = null;
     };
@@ -68,6 +86,10 @@ export function AmbientAudioLayer({ active, variant, breathKind, breathRpm }: Am
   useEffect(() => {
     stateRef.current?.setPatientBreath(breathKind, breathRpm);
   }, [breathKind, breathRpm]);
+
+  useEffect(() => {
+    stateRef.current?.setPatientPosition([patientX, patientY, patientZ]);
+  }, [patientX, patientY, patientZ]);
 
   return <group ref={groupRef} />;
 }

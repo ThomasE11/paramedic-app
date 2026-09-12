@@ -5228,6 +5228,10 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     return { kind: respiratory ? 'clear' : 'none', rpm };
   }, [patientSounds, breathRateRpm, isInArrest, patientUnconscious, caseData]);
 
+  const ambientPatientPosition = useMemo(() => caseData.id === 'resp-001'
+    ? treatmentBayClinicalToWorld([0, 1.31, 0], bayStage, patientPosture, patientMobility, patientScale)
+    : undefined, [caseData.id, bayStage, patientPosture, patientMobility, patientScale]);
+
   // Condition-responsive idle motion cues (wince/shiver/gasp/tremor/seizure/
   // agitation/chest-clutch) — pure derivation, consumed by IdleAnimations
   // inside BodyMesh.
@@ -6401,6 +6405,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 variant={bayVariant}
                 breathKind={ambientBreath.kind}
                 breathRpm={ambientBreath.rpm}
+                patientPosition={ambientPatientPosition}
               />
 
               <BodyMesh

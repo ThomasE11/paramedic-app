@@ -25,6 +25,12 @@ import * as THREE from 'three';
 import { registerAudioContextForUnlock } from '@/data/clinicalSounds';
 
 export type AmbientBreathKind = 'wheeze' | 'stridor' | 'clear' | 'none';
+export type AmbientAudioPosition = readonly [number, number, number];
+
+export interface AmbientAudioOptions {
+  enabled?: boolean;
+  patientPosition?: AmbientAudioPosition;
+}
 
 export interface AmbientAudioState {
   listener: THREE.AudioListener;
@@ -32,9 +38,12 @@ export interface AmbientAudioState {
   ac: THREE.PositionalAudio;
   patient: THREE.PositionalAudio;
   setPatientBreath(kind: AmbientBreathKind, rpm: number): void;
+  setPatientPosition(position: AmbientAudioPosition): void;
   setEnabled(on: boolean): void;
   dispose(): void;
 }
+
+export const DEFAULT_AMBIENT_PATIENT_POSITION: AmbientAudioPosition = [0, 1.05, 0.05];
 
 const ROOM_TONE_SECONDS = 7;
 const AC_HUM_SECONDS = 4;
@@ -169,7 +178,10 @@ const VOLUME = {
   clear: 0.16,
 } as const;
 
-export function createAmbientAudio(): AmbientAudioState {
+export function createAmbientAudio({
+  enabled: initiallyEnabled = true,
+  patientPosition = DEFAULT_AMBIENT_PATIENT_POSITION,
+}: AmbientAudioOptions = {}): AmbientAudioState {
   const listener = new THREE.AudioListener();
   const ctx = listener.context;
   // Share the clinical-sounds unlock registry: first pointer/key gesture
@@ -179,7 +191,7 @@ export function createAmbientAudio(): AmbientAudioState {
   const roomTone = new THREE.Audio(listener);
   roomTone.setBuffer(makeRoomToneBuffer(ctx));
   roomTone.setLoop(true);
-  roomTone.setVolume(VOLUME.roomTone);
+  roomTone.setVolume(initiallyEnabled ? VOLUME.roomTone : 0);
   roomTone.play();
 
   const ac = new THREE.PositionalAudio(listener);
@@ -193,7 +205,7 @@ export function createAmbientAudio(): AmbientAudioState {
   ac.setMaxDistance(8);
   // AC unit on the back wall (matches the villa AC prop placement).
   ac.position.set(1.5, 2.2, -1.8);
-  ac.setVolume(VOLUME.ac);
+  ac.setVolume(initiallyEnabled ? VOLUME.ac : 0);
   ac.play();
 
   const patient = new THREE.PositionalAudio(listener);
@@ -203,10 +215,9 @@ export function createAmbientAudio(): AmbientAudioState {
   patient.setRolloffFactor(1.8);
   patient.setDistanceModel('inverse');
   patient.setMaxDistance(7);
-  // Chest height of the supine/seated patient in bay coordinates.
-  patient.position.set(0, 1.05, 0.05);
+  patient.position.set(...patientPosition);
 
-  let enabled = true;
+  let enabled = initiallyEnabled;
   let currentKind: AmbientBreathKind = 'none';
   let currentRpm = 0;
 
@@ -218,6 +229,10 @@ export function createAmbientAudio(): AmbientAudioState {
     roomTone.setVolume(on ? VOLUME.roomTone : 0);
     ac.setVolume(on ? VOLUME.ac : 0);
     if (patient.buffer) patient.setVolume(on ? patientVolumeFor(currentKind) : 0);
+  };
+
+  const setPatientPosition = (position: AmbientAudioPosition): void => {
+    patient.position.set(...position);
   };
 
   const setPatientBreath = (kind: AmbientBreathKind, rpm: number): void => {
@@ -260,5 +275,14 @@ export function createAmbientAudio(): AmbientAudioState {
     listener.removeFromParent();
   };
 
-  return { listener, roomTone, ac, patient, setPatientBreath, setEnabled, dispose };
+  return {
+    listener,
+    roomTone,
+    ac,
+    patient,
+    setPatientBreath,
+    setPatientPosition,
+    setEnabled,
+    dispose,
+  };
 }
