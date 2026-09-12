@@ -54,7 +54,7 @@ test('reference skin uses the dedicated pore map in a compiled GPU shader', asyn
       const tiles = context.getUniformLocation(program, 'detailNormalTiles');
       const scale = context.getUniformLocation(program, 'detailNormalScale');
       return tiles !== null && scale !== null && context.getUniform(program, tiles) === 28
-        && Math.abs(context.getUniform(program, scale) - .8) < .001;
+        && Math.abs(context.getUniform(program, scale) - 5) < .001;
     });
   })).toBe(true);
   await page.locator('.patient-model-canvas-stage canvas').scrollIntoViewIfNeeded();

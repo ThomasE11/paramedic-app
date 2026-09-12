@@ -80,11 +80,14 @@ def pore_height(u: float, v: float) -> float:
     # Integer-frequency waves are exactly periodic in UV. Their amplitudes are
     # deliberately below the pore signal and break up the otherwise uniform
     # cellular field at two dermal scales.
+    # Keep the low-frequency dermal breakup subordinate to the irregular pores.
+    # Strong crossing waves become a woven diamond pattern once the normal is
+    # amplified by grazing light, which reads as fabric rather than skin.
     waves = (
-        (3, 5, 0.12, 0.41),
-        (7, -4, 0.08, 1.87),
-        (11, 9, 0.055, 3.02),
-        (17, -13, 0.035, 5.11),
+        (3, 5, 0.022, 0.41),
+        (7, -4, 0.014, 1.87),
+        (11, 9, 0.009, 3.02),
+        (17, -13, 0.006, 5.11),
     )
     undulation = sum(
         amplitude * math.sin(math.tau * (fx * u + fy * v) + phase)

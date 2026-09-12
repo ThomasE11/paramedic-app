@@ -25,10 +25,12 @@ EXPECTED_SIZE = 512
 MAX_SEAM_RMSE = 0.005
 MIN_XY_STD = 0.018
 MAX_XY_STD = 0.11
-MIN_ACTIVE_FRACTION = 0.45
+# The pore-only field intentionally leaves calm inter-pore skin; requiring the
+# old wave-heavy coverage reintroduces the woven lattice this validator guards.
+MIN_ACTIVE_FRACTION = 0.35
 MAX_STRONG_FRACTION = 0.10
 RECOMMENDED_TILES = 28
-RECOMMENDED_SCALE = 0.8
+RECOMMENDED_SCALE = 5.0
 
 
 def main() -> None:

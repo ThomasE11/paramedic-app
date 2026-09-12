@@ -14,7 +14,9 @@ export const RESP001_SKIN_DETAIL_PROFILE: SkinDetailProfile = Object.freeze({
   url: '/models/patient-male-skin-resp001-pore-detail-normal.png',
   // Current face UV density gives ~0.77 mm median pore spacing at 28 repeats.
   tiles: 28,
-  scale: 0.8,
+  // The baked normal is deliberately shallow (XY σ≈0.028); this gain keeps
+  // pore relief legible under the villa's broad, soft daylight.
+  scale: 5.0,
 });
 
 export function skinDetailProfileForPilot(enabled: boolean): SkinDetailProfile | undefined {
