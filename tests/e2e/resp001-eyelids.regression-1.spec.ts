@@ -19,13 +19,15 @@ test('pilot blinks with physical lids while retaining the eyes behind them', asy
     const target=lids.morphTargetDictionary!.eyelids_closed;
     const samples: Array<{time:number,closure:number,eyesVisible:boolean}>=[];
     const captures: Record<string,string>={};
-    const coverage: Record<string,{covered:number,total:number,rays:Array<{eye:string,x:number,y:number,covered:boolean,faceOccluded:boolean,irisHit:boolean}>}>={};
+    const coverage: Record<string,{closure:number,covered:number,total:number,rays:Array<{eye:string,x:number,y:number,covered:boolean,faceOccluded:boolean,irisHit:boolean}>}>={};
     const start=performance.now();
     await new Promise<void>(resolve => {
       const sample=()=>{
         const closure=lids.morphTargetInfluences![target];
         samples.push({time:performance.now()-start,closure,eyesVisible:left.visible&&right.visible});
-        const label=closure>.98?'closed':closure>.3&&closure<.7?'partial':closure<.01?'open':null;
+        // The final 2% is still moving skin, not a sealed aperture. Sample
+        // the blink's fully closed hold rather than an almost-closed frame.
+        const label=closure>=1-1e-8?'closed':closure>.3&&closure<.7?'partial':closure<.01?'open':null;
         if(label&&!captures[label]) {
           state.gl.render(state.scene,state.camera);
           captures[label]=state.gl.domElement.toDataURL('image/png');
@@ -58,7 +60,7 @@ test('pilot blinks with physical lids while retaining the eyes behind them', asy
             rays.push({eye:name,x,y,covered:occluded,faceOccluded,irisHit:Number.isFinite(irisDistance)});
             total++;
           }
-          coverage[label]={covered,total,rays};
+          coverage[label]={closure,covered,total,rays};
         }
         if(performance.now()-start>=12000) resolve();else requestAnimationFrame(sample);
       };
@@ -89,7 +91,7 @@ test('pilot blinks with physical lids while retaining the eyes behind them', asy
   // Collapsed UV rows produced dark vertical texture stripes on closed lids.
   expect(result.minUvArea).toBeGreaterThan(1e-12);
   expect(result.samples.every(sample=>sample.eyesVisible)).toBe(true);
-  expect(result.samples.some(sample=>sample.closure>.98)).toBe(true);
+  expect(result.samples.some(sample=>sample.closure>=1-1e-8)).toBe(true);
   expect(result.samples.some(sample=>sample.closure>.3&&sample.closure<.7)).toBe(true);
   expect(result.samples.filter(sample=>sample.closure<.01).length).toBeGreaterThan(result.samples.length*.7);
   expect(Object.keys(result.captures).sort()).toEqual(['closed','open','partial']);
@@ -102,6 +104,7 @@ test('pilot blinks with physical lids while retaining the eyes behind them', asy
   expect(centres.every(ray=>!ray.covered&&!ray.faceOccluded)).toBe(true);
   expect(result.coverage.open.covered).toBeLessThan(result.coverage.open.total*.25);
   expect(result.coverage.closed.rays.every(ray=>ray.covered||ray.faceOccluded)).toBe(true);
+  expect(result.coverage.closed.closure).toBeCloseTo(1, 8);
 });
 
 test('non-pilot patients retain the shared eye path without loading the lid asset', async ({ page }) => {
