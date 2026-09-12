@@ -517,7 +517,10 @@ export const secondYearCases: CaseScenario[] = [
       description: 'Apartment, patient sitting on sofa holding chest',
       hazards: ['None identified'],
       bystanders: 'Wife and adult daughter present',
-      environment: 'Comfortable home environment'
+      environment: 'Comfortable home environment',
+      environmentVariant: 'home',
+      sceneImagePath: '/scene-assets/home-medical-male-dubai-apartment.png',
+      sceneImageCaption: 'Home apartment — Dubai Marina'
     },
     initialPresentation: {
       generalImpression: 'Middle-aged male, appears unwell, clutching chest',
