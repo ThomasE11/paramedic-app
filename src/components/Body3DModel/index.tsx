@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
 import { BodyMesh, getTreatmentBayTransform, treatmentBayClinicalToWorld, RESP001_SEATED_SUPPORT_LIFT, type BayPatientStage } from './BodyMesh';
 import { resolveAssessmentContact } from './assessmentContact';
+import { createPalpationHandFit, PALPATION_FINGERS } from './palpationHandFit';
 import { hasPainfulPalpationFinding } from './palpationReaction';
 import { PilotIrisDetail, PupilLightExam, PupilLightControls } from './PupilLightExam';
 import { getBreathingPattern, liveBreathingDepth } from '@/lib/breathingPresentation';
@@ -827,6 +828,8 @@ function AssessmentContactTool({ action, region, sampler, patientScale, exposed 
 }) {
   const root = useRef<THREE.Group>(null);
   const gesture = useRef<THREE.Group>(null);
+  const hand = useRef<THREE.Group>(null);
+  const fitHand = useMemo(() => createPalpationHandFit(), []);
   const elapsed = useRef(0);
   const [sequence, setSequence] = useState(0);
   const contact = resolveAssessmentContact(action, region, RESP001_EXAM_LANDMARKS, sequence);
@@ -851,6 +854,9 @@ function AssessmentContactTool({ action, region, sampler, patientScale, exposed 
     root.current.quaternion.setFromUnitVectors(vectors.z, vectors.normal);
     root.current.userData.site = contact.label;
     root.current.userData.technique = contact.technique;
+    if (contact.technique === 'palpate' && hand.current && sampler?.contact) {
+      fitHand(root.current, hand.current, sampler.contact, contact.position, patientScale);
+    }
     if (gesture.current) {
       const motion = contact.technique === 'percuss' ? Math.pow(Math.max(0, Math.sin(elapsed.current * 9)), 4) * .022
         : contact.technique === 'palpate' ? (1 - Math.cos(elapsed.current * 2.5)) * .002 : 0;
@@ -891,18 +897,18 @@ function AssessmentContactTool({ action, region, sampler, patientScale, exposed 
             ))}
           </group>
         ) : (
-          <group name="assessment-gloved-hand" position={[0, -.025, .012]}>
-            <mesh scale={[.027, .034, .009]} raycast={NO_TOOL_RAYCAST}>
+          <group ref={hand} name="assessment-gloved-hand">
+            <mesh name="assessment-palm" scale={[.027, .034, .009]} raycast={NO_TOOL_RAYCAST}>
               <sphereGeometry args={[1, 16, 12]} />
               <meshStandardMaterial color="#60a5d6" roughness={.8} />
             </mesh>
-            {[-.020, -.007, .007, .020].map((x, i) => (
-              <mesh key={x} position={[x, .038 - Math.abs(i - 1.5) * .005, 0]} raycast={NO_TOOL_RAYCAST}>
-                <capsuleGeometry args={[.006, .032 - Math.abs(i - 1.5) * .005, 4, 8]} />
+            {PALPATION_FINGERS.map((finger, i) => (
+              <mesh key={finger.x} name={`assessment-finger-${i}`} raycast={NO_TOOL_RAYCAST}>
+                <capsuleGeometry args={[.006, finger.length, 4, 8]} />
                 <meshStandardMaterial color="#60a5d6" roughness={.8} />
               </mesh>
             ))}
-            <mesh position={[-.031, .002, .003]} rotation={[0, 0, -.65]} raycast={NO_TOOL_RAYCAST}>
+            <mesh name="assessment-thumb" raycast={NO_TOOL_RAYCAST}>
               <capsuleGeometry args={[.008, .022, 4, 8]} />
               <meshStandardMaterial color="#60a5d6" roughness={.8} />
             </mesh>
