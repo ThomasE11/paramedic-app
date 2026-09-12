@@ -112,6 +112,19 @@ describe('patientMotion', () => {
     });
 
     expect(signals.motion_agitation).toBeGreaterThan(0);
-    expect(signals.motion_agitation).toBeLessThanOrEqual(0.16);
+    expect(signals.motion_agitation).toBeLessThanOrEqual(0.08);
+  });
+
+  it('does not layer agitation on top of a gasping respiratory patient', () => {
+    const signals = computePatientMotionSignals({
+      time: 1.5625,
+      gate: 1,
+      cues: cues({ agitated: true, gasping: true }),
+      reduced: false,
+      winceStart: -1,
+      gaspStart: -1,
+      clutchStart: -1,
+    });
+    expect(signals.motion_agitation).toBe(0);
   });
 });

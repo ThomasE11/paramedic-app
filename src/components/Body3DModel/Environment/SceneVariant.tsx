@@ -19,6 +19,7 @@ import * as THREE from 'three';
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 import type { EnvironmentVariant } from '@/lib/sceneEnvironment';
 import { getVillaTextures } from './textures';
+import { KenneyPatientChair } from './KenneyPatientChair';
 
 const NO_RAYCAST = () => null;
 
@@ -426,31 +427,12 @@ function HomeScene({ hideOverhead, shadowsEnabled, showPatientSeat }: { hideOver
         ))}
       </group>
 
-      {/* Patient bench — deliberately backless/armless so the student's view
-          of the chest, forearms and knees stays unobstructed. Its front edge sits
-          directly beneath the grounded tripod pelvis; without a support the
-          newly flexed seated pose correctly planted its feet but appeared to
-          hover in the middle of the room. */}
+      {/* Kenney dining chair, scaled onto the seated pelvis plant. The
+          previous box-pan + slab backrest read as a crate, not furniture. */}
       {showPatientSeat && (
-        <group name="home-patient-chair" position={[0, 0, 0.34]}>
-          {/* Seat pan */}
-          <mesh position={[0, 0.53, -0.02]} castShadow receiveShadow raycast={NO_RAYCAST}>
-            <boxGeometry args={[0.62, 0.07, 0.52]} />
-            <meshStandardMaterial color="#5c4634" roughness={0.82} />
-          </mesh>
-          {/* Backrest — this is what makes it read as a chair, not a bench */}
-          <mesh position={[0, 0.92, -0.26]} castShadow raycast={NO_RAYCAST}>
-            <boxGeometry args={[0.62, 0.72, 0.07]} />
-            <meshStandardMaterial color="#6a513c" roughness={0.86} />
-          </mesh>
-          {/* Four legs */}
-          {([[-0.26, -0.20], [0.26, -0.20], [-0.26, 0.18], [0.26, 0.18]] as const).map(([x, z]) => (
-            <mesh key={`patient-chair-leg-${x}-${z}`} position={[x, 0.255, z]} castShadow raycast={NO_RAYCAST}>
-              <boxGeometry args={[0.05, 0.51, 0.05]} />
-              <meshStandardMaterial color="#3f2f22" roughness={0.55} metalness={0.08} />
-            </mesh>
-          ))}
-        </group>
+        <Suspense fallback={null}>
+          <KenneyPatientChair kind="dining" name="home-patient-chair" />
+        </Suspense>
       )}
 
       {/* Coffee table, pushed aside to make room for the crew */}
@@ -562,36 +544,9 @@ function PublicScene({
           inspectable; the ottoman is the clinical plant for the calves. */}
       {showPatientSeat && (
         <>
-          <group name="public-patient-chair" position={[0, 0, 0.34]}>
-            <mesh position={[0, 0.52, -0.04]} castShadow receiveShadow raycast={NO_RAYCAST}>
-              <boxGeometry args={[0.58, 0.08, 0.50]} />
-              <meshStandardMaterial color="#4b5568" roughness={0.88} />
-            </mesh>
-            <mesh position={[0, 0.96, -0.26]} castShadow raycast={NO_RAYCAST}>
-              <boxGeometry args={[0.54, 0.72, 0.06]} />
-              <meshStandardMaterial color="#3f4a5a" roughness={0.78} />
-            </mesh>
-            <mesh position={[0, 0.27, -0.08]} castShadow raycast={NO_RAYCAST}>
-              <cylinderGeometry args={[0.04, 0.05, 0.48, 12]} />
-              <meshStandardMaterial color="#9aa3ad" roughness={0.32} metalness={0.55} />
-            </mesh>
-            <mesh position={[0, 0.08, -0.08]} raycast={NO_RAYCAST}>
-              <cylinderGeometry args={[0.28, 0.28, 0.045, 18]} />
-              <meshStandardMaterial color="#d5dbe3" roughness={0.28} metalness={0.62} />
-            </mesh>
-            {([0, Math.PI / 2, Math.PI, (Math.PI * 3) / 2] as const).map(angle => (
-              <group key={`public-chair-caster-${angle}`} rotation={[0, angle, 0]}>
-                <mesh position={[0, 0.055, 0.30]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
-                  <cylinderGeometry args={[0.032, 0.032, 0.04, 12]} />
-                  <meshStandardMaterial color="#111827" roughness={0.7} />
-                </mesh>
-                <mesh position={[0, 0.08, 0.16]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
-                  <cylinderGeometry args={[0.014, 0.014, 0.28, 10]} />
-                  <meshStandardMaterial color="#9aa3ad" roughness={0.32} metalness={0.55} />
-                </mesh>
-              </group>
-            ))}
-          </group>
+          <Suspense fallback={null}>
+            <KenneyPatientChair kind="desk" name="public-patient-chair" />
+          </Suspense>
           <group name="public-patient-ottoman" position={[0, 0, 1.02]}>
             {/* Top at ~0.24 m — matches the 0.26 m sole lift on pose_legs_elevated
                 after the seated pelvis plant, so calves rest instead of hover. */}
@@ -926,25 +881,12 @@ function HeatScene({ shadowsEnabled, showPatientSeat }: { shadowsEnabled: boolea
         <boxGeometry args={[5.75, 0.045, 4.15]} />
         <meshStandardMaterial color="#e8dfc8" roughness={0.92} side={THREE.DoubleSide} />
       </mesh>
-      {/* Backless field bench supports a seated heat-illness patient without
-          covering the chest, arms or legs students need to examine. */}
+      {/* Kenney dining chair under the canopy — four legs and a backrest so
+          the shade-station plant reads as a chair, not a field crate. */}
       {showPatientSeat && (
-        <group name="heat-patient-chair" position={[0, 0, 0.34]}>
-          <mesh position={[0, 0.53, -0.02]} castShadow receiveShadow raycast={NO_RAYCAST}>
-            <boxGeometry args={[0.64, 0.08, 0.5]} />
-            <meshStandardMaterial color="#6b563f" roughness={0.9} />
-          </mesh>
-          <mesh position={[0, 0.9, -0.24]} castShadow raycast={NO_RAYCAST}>
-            <boxGeometry args={[0.64, 0.68, 0.06]} />
-            <meshStandardMaterial color="#7a6248" roughness={0.88} />
-          </mesh>
-          {([[-0.26, -0.18], [0.26, -0.18], [-0.26, 0.16], [0.26, 0.16]] as const).map(([x, z]) => (
-            <mesh key={`heat-chair-leg-${x}-${z}`} position={[x, 0.255, z]} castShadow raycast={NO_RAYCAST}>
-              <boxGeometry args={[0.05, 0.51, 0.05]} />
-              <meshStandardMaterial color="#454a4e" roughness={0.52} metalness={0.48} />
-            </mesh>
-          ))}
-        </group>
+        <Suspense fallback={null}>
+          <KenneyPatientChair kind="dining" name="heat-patient-chair" />
+        </Suspense>
       )}
       {/* Cooler and bottled water on the crew side. */}
       <group position={[2.75, 0, 1.5]}>

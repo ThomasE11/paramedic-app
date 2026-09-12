@@ -11,13 +11,14 @@
  * planted on the floor/stretcher and attached equipment keeps its anchor:
  *
  *   • Shoulder lift  — coupled to the real breathing clock, and scaled by the
- *     respiratory rate. At a normal rate it is a barely-perceptible rise; as
- *     the patient becomes tachypnoeic it grows into visible shoulder heave,
- *     which is the accessory-muscle recruitment a student should be reading
- *     off a respiratory-distress patient.
- *   • Arm / forearm drift — two incommensurate sines per side so the limbs
- *     settle and resettle instead of holding one frozen pose. Deliberately
- *     asymmetric: matching left/right motion reads as a machine.
+ *     respiratory rate. Applied to Mixamo *Shoulder* bones (the girdle), not
+ *     the upper-arm bones: rotating LeftArm/RightArm levers the hands through
+ *     a 30 mm arc and reads as jitter, especially on a tripod patient whose
+ *     hands should stay planted on the knees.
+ *   • Arm / forearm drift — two incommensurate sines per side so unbraced
+ *     limbs settle and resettle instead of holding one frozen pose. Off while
+ *     the patient is braced (tripod / hard accessory use): still arms plus a
+ *     heaving chest is the finding, not a garnish sway.
  *
  * Amplitudes are radians and intentionally tiny — this should register as
  * "alive" in peripheral vision, never as a gesture.
@@ -53,12 +54,23 @@ export interface IdleLimbMotionInput {
   breathingEffort?: number;
   /** Adaptive-quality low rung — keep the clinical signal, drop the garnish. */
   reduced?: boolean;
+  /**
+   * Hands are load-bearing (tripod, frank accessory recruitment). Keep the
+   * shoulder shrug but freeze arm/forearm garnish so the planted hands do
+   * not wander off the knees.
+   */
+  braced?: boolean;
 }
 
 /** Barely-there shoulder movement at a normal, comfortable respiratory rate. */
-const SHOULDER_LIFT_QUIET = 0.004;
-/** Full accessory-muscle heave once the patient is frankly tachypnoeic. */
-const SHOULDER_LIFT_LABOURED = 0.05;
+const SHOULDER_LIFT_QUIET = 0.003;
+/**
+ * Full accessory-muscle shrug once the patient is frankly tachypnoeic.
+ * Kept small on purpose: this is applied at the shoulder girdle, and even a
+ * 3° rotation still travels the hands. 0.018 rad (~1°) is a readable heave
+ * without waving the forearms.
+ */
+const SHOULDER_LIFT_LABOURED = 0.018;
 /** Rate at which shoulder involvement starts to become visible. */
 const ACCESSORY_ONSET_RPM = 18;
 /** Rate at which it is fully recruited. */
@@ -93,7 +105,15 @@ export function computeIdleLimbMotion(
   input: IdleLimbMotionInput,
   out: IdleLimbMotion,
 ): IdleLimbMotion {
-  const { time, gate, breathPhase01, respiratoryRate, breathingEffort = 0, reduced = false } = input;
+  const {
+    time,
+    gate,
+    breathPhase01,
+    respiratoryRate,
+    breathingEffort = 0,
+    reduced = false,
+    braced = false,
+  } = input;
 
   if (gate <= 0) {
     out.shoulderLift = 0;
@@ -107,9 +127,12 @@ export function computeIdleLimbMotion(
   // Rise with inhalation, fall with exhalation — same 0..1 curve shape the
   // chest morph uses, so shoulders and chest move as one breath.
   const breathRise = 0.5 - 0.5 * Math.cos(breathPhase01 * Math.PI * 2);
-  out.shoulderLift = accessoryLiftAmplitude(respiratoryRate, breathingEffort) * breathRise * gate;
+  const lift = accessoryLiftAmplitude(respiratoryRate, breathingEffort) * breathRise * gate;
+  // Braced hands (tripod) still get a girdle shrug, but a smaller one so the
+  // planted contact points do not skate.
+  out.shoulderLift = braced ? lift * 0.55 : lift;
 
-  if (reduced) {
+  if (reduced || braced) {
     out.leftArmDrift = 0;
     out.rightArmDrift = 0;
     out.leftForeArmDrift = 0;

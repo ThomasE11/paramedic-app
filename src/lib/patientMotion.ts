@@ -90,9 +90,12 @@ export function computePatientMotionSignals({
   }
 
   // ---- Agitation doesn't compound with shiver/tremor — it's slow restless motion ----
-  const agitationBeat = !reduced && cues.agitated && !jitterEnabled
-    ? (0.5 + 0.5 * Math.sin(time * TAU * 0.16)) * 0.16 * consciousGate
-    : jitterEnabled ? 0 : 0; // suppress while seizure/tremor/shiver active
+  // A gasping / accessory-muscle patient is already using the chest and
+  // shoulder morphs. Layering a 16% whole-upper-body shift on top of that
+  // reads as jitter, not distress, so keep agitation off while gasping.
+  const agitationBeat = !reduced && cues.agitated && !jitterEnabled && !cues.gasping
+    ? (0.5 + 0.5 * Math.sin(time * TAU * 0.16)) * 0.08 * consciousGate
+    : 0;
   out.motion_agitation = agitationBeat;
 
   // ---- Clinical pulses (wince/gasp/clutch) always run on their own schedule ----

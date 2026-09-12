@@ -13,6 +13,7 @@
  */
 
 import type { CaseScenario, CaseCategory, VitalSigns } from '@/types';
+import { getPupilProfile } from '@/lib/pupilExam';
 
 // ============================================================================
 // TYPES
@@ -1062,14 +1063,17 @@ export function getStepFindings(
         severity: dis.gcs.total <= 8 ? 'critical' : dis.gcs.total <= 12 ? 'abnormal' : 'normal',
         significance: dis.gcs.total <= 8 ? 'GCS <= 8: Consider intubation/advanced airway.' : undefined,
       });
+      const pupilText = Array.isArray(dis.pupils) ? dis.pupils.join('; ') : dis.pupils;
+      const pupilProfile = getPupilProfile(caseData);
+      const pupilCritical = pupilProfile.leftReaction === 'fixed'
+        || pupilProfile.rightReaction === 'fixed'
+        || pupilProfile.leftMm !== pupilProfile.rightMm;
       findings.push({
         label: 'Pupils',
-        value: Array.isArray(dis.pupils) ? dis.pupils.join('; ') : dis.pupils,
-        severity: hasAffirmedClinicalFinding(
-          Array.isArray(dis.pupils) ? dis.pupils.join('; ') : dis.pupils,
-          /\b(?:unequal|fixed)\b/i,
-        )
-          ? 'critical' : 'normal',
+        value: pupilText,
+        severity: pupilProfile.abnormal
+          ? (pupilCritical ? 'critical' : 'abnormal')
+          : 'normal',
       });
       if (dis.bloodGlucose !== undefined) {
         findings.push({

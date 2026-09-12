@@ -1235,6 +1235,18 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     () => standingArmBones.map(arm => arm.quaternion.clone()),
     [standingArmBones],
   );
+  // Accessory recruitment is a girdle shrug, not an upper-arm wave. Mixamo's
+  // LeftArm/RightArm sit distal to the clavicle; rotating them levers the
+  // hands ~30 mm and reads as jitter on a tripod patient.
+  const accessoryShoulderBones = useMemo(() => (
+    ['mixamorig:LeftShoulder', 'mixamorig:RightShoulder']
+      .map(name => clonedScene.getObjectByName(name) ?? clonedScene.getObjectByName(name.replace(/:/g, '')))
+      .filter((node): node is THREE.Object3D => node !== undefined)
+  ), [clonedScene]);
+  const accessoryShoulderRest = useMemo(
+    () => accessoryShoulderBones.map(shoulder => shoulder.quaternion.clone()),
+    [accessoryShoulderBones],
+  );
   const recumbentForearmBones = useMemo(() => (
     ['mixamorig:LeftForeArm', 'mixamorig:RightForeArm']
       .map(name => clonedScene.getObjectByName(name) ?? clonedScene.getObjectByName(name.replace(/:/g, '')))
@@ -1527,6 +1539,9 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
       // of an unkeyed bone would otherwise accumulate rotation frame by frame
       // and present as vibrating or progressively splayed arms.
       standingArmBones.forEach((arm, index) => arm.quaternion.copy(standingArmRest[index]));
+      accessoryShoulderBones.forEach((shoulder, index) => (
+        shoulder.quaternion.copy(accessoryShoulderRest[index])
+      ));
       postureSpineBones.forEach((spine, index) => spine.quaternion.copy(postureSpineRest[index]));
     }
     skeletalMixer?.update(Math.min(delta, 0.05));
@@ -1555,6 +1570,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         respiratoryRate: breathRateRpm,
         breathingEffort,
         reduced: reduceIdleMotion,
+        braced: posture === 'tripod' || breathingEffort >= 0.5,
       }, idleLimbRef.current);
 
       standingArmBones.forEach((arm, index) => {
@@ -1562,11 +1578,15 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         if (armRelaxation > 0) arm.rotateX(armRelaxation);
         const isLeft = arm.name.toLowerCase().includes('left');
         arm.rotateX(isLeft ? idleLimb.leftArmDrift : idleLimb.rightArmDrift);
-        // Mirrored skeleton: the same sign lifts one shoulder and drops the
-        // other, so the respiratory rise has to flip per side.
-        if (idleLimb.shoulderLift !== 0) {
-          arm.rotateZ(isLeft ? -idleLimb.shoulderLift : idleLimb.shoulderLift);
-        }
+      });
+      // Shrug the girdle, not the upper arms: the clavicle/scapula bones
+      // sit proximal to the planted hands, so a 1° rise reads as accessory
+      // recruitment instead of waving the forearms.
+      accessoryShoulderBones.forEach((shoulder, index) => {
+        shoulder.quaternion.copy(accessoryShoulderRest[index]);
+        if (idleLimb.shoulderLift === 0) return;
+        const isLeft = shoulder.name.toLowerCase().includes('left');
+        shoulder.rotateZ(isLeft ? idleLimb.shoulderLift : -idleLimb.shoulderLift);
       });
       const forearmRelaxation = patientForearmRestRadians(mobility, patientAge);
       recumbentForearmBones.forEach((forearm, index) => {

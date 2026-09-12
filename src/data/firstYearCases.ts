@@ -447,7 +447,7 @@ export const firstYearCases: CaseScenario[] = [
       bystanders: 'Receptionist nearby',
       environment: 'Air conditioned office',
       environmentVariant: 'public',
-      sceneImagePath: '/scene-assets/office-female-palpitations-syncope-dubai.png',
+      sceneImagePath: '/scene-assets/office-abdominal-male-uae.png',
       sceneImageCaption: 'Scene — Air conditioned office',
     },
     initialPresentation: {
@@ -1819,7 +1819,10 @@ export const firstYearCases: CaseScenario[] = [
       description: 'Kitchen floor, open bottle of bleach-based cleaner nearby, small amount spilled',
       hazards: ['Open chemical container', 'Chemical spill on floor', 'Younger sibling nearby'],
       bystanders: 'Mother holding child, younger sibling (1 year) in playpen',
-      environment: 'Domestic kitchen'
+      environment: 'Domestic kitchen',
+      environmentVariant: 'home',
+      sceneImagePath: '/scene-assets/home-pediatric-uae-family.png',
+      sceneImageCaption: 'Scene — Domestic kitchen, toddler ingestion',
     },
     initialPresentation: {
       generalImpression: 'Toddler crying, drooling excessively, mother holding him',
@@ -2631,7 +2634,7 @@ export const firstYearCases: CaseScenario[] = [
       bystanders: 'Security guard who let ambulance in',
       environment: 'Air-conditioned office, quiet evening',
       environmentVariant: 'public',
-      sceneImagePath: '/scene-assets/office-female-palpitations-syncope-dubai.png',
+      sceneImagePath: '/scene-assets/office-medical-dubai.png',
       sceneImageCaption: 'Scene — Air-conditioned office, quiet evening',
     },
     initialPresentation: {
@@ -3414,7 +3417,7 @@ export const firstYearCases: CaseScenario[] = [
       bystanders: 'Colleague witnessed the event',
       environment: 'Air-conditioned office',
       environmentVariant: 'public',
-      sceneImagePath: '/scene-assets/office-female-palpitations-syncope-dubai.png',
+      sceneImagePath: '/scene-assets/office-medical-dubai.png',
       sceneImageCaption: 'Scene — Air-conditioned office',
     },
     initialPresentation: {

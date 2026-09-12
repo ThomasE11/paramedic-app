@@ -18,7 +18,7 @@ describe('accessoryLiftAmplitude', () => {
   });
 
   it('stays barely perceptible at a comfortable rate', () => {
-    expect(accessoryLiftAmplitude(14)).toBeLessThan(0.006);
+    expect(accessoryLiftAmplitude(14)).toBeLessThan(0.004);
   });
 
   it('recruits progressively as the patient becomes tachypnoeic', () => {
@@ -77,10 +77,26 @@ describe('computeIdleLimbMotion', () => {
   it('never moves a limb far enough to read as a gesture', () => {
     for (let time = 0; time < 120; time += 0.3) {
       const m = run({ time, breathPhase01: (time % 3) / 3, respiratoryRate: 40 });
-      expect(Math.abs(m.shoulderLift)).toBeLessThan(0.06);
+      expect(Math.abs(m.shoulderLift)).toBeLessThan(0.02);
       expect(Math.abs(m.leftArmDrift)).toBeLessThan(0.02);
       expect(Math.abs(m.rightForeArmDrift)).toBeLessThan(0.02);
     }
+  });
+
+  it('freezes arm garnish on a braced / tripod patient while keeping the shrug', () => {
+    const m = run({ braced: true, respiratoryRate: 32, breathingEffort: 1 });
+    expect(m.shoulderLift).toBeGreaterThan(0);
+    expect(m.leftArmDrift).toBe(0);
+    expect(m.rightArmDrift).toBe(0);
+    expect(m.leftForeArmDrift).toBe(0);
+    expect(m.rightForeArmDrift).toBe(0);
+  });
+
+  it('keeps a smaller shrug when the hands are load-bearing', () => {
+    const free = run({ respiratoryRate: 32, breathingEffort: 1, breathPhase01: 0.5 });
+    const braced = run({ respiratoryRate: 32, breathingEffort: 1, breathPhase01: 0.5, braced: true });
+    expect(braced.shoulderLift).toBeGreaterThan(0);
+    expect(braced.shoulderLift).toBeLessThan(free.shoulderLift);
   });
 
   it('drives the two sides out of step so the motion never reads mechanical', () => {

@@ -16,11 +16,12 @@
  * - the stretcher footprint ([0, 0.45, 0.02], 1.18 x 2.38) is load-bearing —
  *   BodyMesh stages the patient against it. Do not move it.
  */
-import { useEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { getBayTextures } from './textures';
 import { SceneVariantEnvironment } from './SceneVariant';
+import { KenneyPatientChair } from './KenneyPatientChair';
 import type { EnvironmentVariant } from '@/lib/sceneEnvironment';
 import type { PatientSupportSurface } from '@/lib/patientStaging';
 import { focusRig, resetFocusRig, FOCUS_REST, FOCUS_WIDE } from '@/lib/focusRig';
@@ -251,41 +252,14 @@ function Stretcher() {
   );
 }
 
-/** Backless clinical examination stool for tripod/seated presentations. It
- * supports the pelvis without covering the torso, forearms, knees or distal
- * pulse targets students need to inspect and treat. */
+/** Kenney desk chair for tripod/seated presentations in the bay, worksite,
+ * fire and water scenes. Seat pan is planted at 0.53 m so the pelvis stays
+ * on the pan; rolling base + backrest read as a chair, not a crate. */
 function ClinicalPatientSeat() {
   return (
-    <group name="clinical-patient-seat" position={[0, 0, 0.34]}>
-      <mesh position={[0, 0.52, -0.02]} castShadow receiveShadow raycast={NO_RAYCAST}>
-        <cylinderGeometry args={[0.36, 0.36, 0.08, 28]} />
-        <meshStandardMaterial color="#31566f" roughness={0.84} />
-      </mesh>
-      <mesh position={[0, 0.88, -0.28]} castShadow raycast={NO_RAYCAST}>
-        <boxGeometry args={[0.52, 0.64, 0.06]} />
-        <meshStandardMaterial color="#3d647c" roughness={0.82} />
-      </mesh>
-      <mesh position={[0, 0.27, -0.08]} castShadow raycast={NO_RAYCAST}>
-        <cylinderGeometry args={[0.045, 0.055, 0.5, 14]} />
-        <meshStandardMaterial color={PALETTE.steel} {...steelProps()} />
-      </mesh>
-      <mesh position={[0, 0.08, -0.08]} raycast={NO_RAYCAST}>
-        <cylinderGeometry args={[0.3, 0.3, 0.055, 20]} />
-        <meshStandardMaterial color={PALETTE.metal} {...steelProps()} />
-      </mesh>
-      {([0, Math.PI / 2, Math.PI, (Math.PI * 3) / 2] as const).map(angle => (
-        <group key={`clinical-seat-caster-${angle}`} rotation={[0, angle, 0]}>
-          <mesh position={[0, 0.055, 0.32]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
-            <cylinderGeometry args={[0.035, 0.035, 0.045, 12]} />
-            <meshStandardMaterial color="#111827" roughness={0.7} />
-          </mesh>
-          <mesh position={[0, 0.08, 0.17]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST}>
-            <cylinderGeometry args={[0.016, 0.016, 0.3, 10]} />
-            <meshStandardMaterial color={PALETTE.steel} {...steelProps()} />
-          </mesh>
-        </group>
-      ))}
-    </group>
+    <Suspense fallback={null}>
+      <KenneyPatientChair kind="desk" name="clinical-patient-seat" />
+    </Suspense>
   );
 }
 

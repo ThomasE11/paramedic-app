@@ -21,7 +21,7 @@
 import * as THREE from 'three';
 import { classifyBodyPoint } from '@/lib/regionClassifier';
 import { drawWound, type WoundKind } from './woundSprites';
-import type { BodyInjury } from '@/lib/injuryMap';
+import type { BodyInjury, InjuryLaterality } from '@/lib/injuryMap';
 
 /** Map an inferred injury to a drawable sprite kind — null = not skin art
  * (deformity/swelling/etc. are shape findings handled by morphs and pips). */
@@ -57,8 +57,15 @@ const SEVERITY_SIZE: Record<BodyInjury['severity'], number> = {
 
 /** Does a world-space vertex belong to the injury's region? Anterior regions
  * additionally require a camera-facing (front) vertex so the wound is where
- * the student actually looks; 'back' wants posterior torso. */
-function vertexMatchesRegion(x: number, y: number, z: number, region3d: string): boolean {
+ * the student actually looks; 'back' wants posterior torso.
+ * Laterality is the patient's own left/right (positive X = patient left). */
+export function vertexMatchesRegion(
+  x: number,
+  y: number,
+  z: number,
+  region3d: string,
+  laterality?: InjuryLaterality,
+): boolean {
   if (region3d === 'posterior-logroll') {
     return z < -0.01 && y > 0.8 && y < 1.45;
   }
@@ -66,8 +73,13 @@ function vertexMatchesRegion(x: number, y: number, z: number, region3d: string):
   // render reliably on all patient models regardless of rest pose depth.
   if (z < -0.05) return false;
   const hit = classifyBodyPoint(x, y, z);
-  if (region3d === 'head') return hit.region === 'head' || hit.region === 'face';
-  return hit.region === region3d;
+  const regionOk = region3d === 'head'
+    ? hit.region === 'head' || hit.region === 'face'
+    : hit.region === region3d;
+  if (!regionOk) return false;
+  if (laterality === 'left' && x < 0.02) return false;
+  if (laterality === 'right' && x > -0.02) return false;
+  return true;
 }
 
 /**
@@ -77,7 +89,7 @@ function vertexMatchesRegion(x: number, y: number, z: number, region3d: string):
  */
 export function applyWoundsToTextures(
   body: THREE.Mesh,
-  injuries: Array<Pick<BodyInjury, 'id' | 'kind' | 'label' | 'detail' | 'severity' | 'region'>>,
+  injuries: Array<Pick<BodyInjury, 'id' | 'kind' | 'label' | 'detail' | 'severity' | 'region' | 'laterality'>>,
   regionTo3D: (region: BodyInjury['region']) => string,
 ): number {
   try {
@@ -116,23 +128,38 @@ export function applyWoundsToTextures(
 
       // Collect matching vertex UVs. Sampling stride keeps this fast on the
       // ~15-27k vertex meshes (~milliseconds, runs once per case).
-      const candidates: Array<[number, number]> = [];
-      for (let i = 0; i < pos.count; i += 2) {
-        v.fromBufferAttribute(pos, i).applyMatrix4(toBind);
-        if (!vertexMatchesRegion(v.x, v.y, v.z, region3d)) continue;
-        candidates.push([uv.getX(i), uv.getY(i)]);
-      }
+      type Cand = { u: number; v: number; x: number };
+      const collect = (withSide: boolean): Cand[] => {
+        const out: Cand[] = [];
+        for (let i = 0; i < pos.count; i += 2) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(toBind);
+          if (!vertexMatchesRegion(v.x, v.y, v.z, region3d, withSide ? injury.laterality : undefined)) continue;
+          out.push({ u: uv.getX(i), v: uv.getY(i), x: v.x });
+        }
+        return out;
+      };
+      let candidates = collect(true);
+      // Never drop a authored wound because the mesh is skinny at rest —
+      // fall back to the whole region rather than painting nothing.
+      if (candidates.length === 0 && injury.laterality) candidates = collect(false);
       if (candidates.length === 0) continue;
 
       const h = hashInjury(injury.id);
-      // Middle of the candidate list (sorted for determinism) keeps the wound
-      // away from region borders; the hash spreads multiple wounds apart.
-      candidates.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-      const pick = candidates[(h % Math.max(1, candidates.length - 2)) + 1] ?? candidates[0];
+      let pick: Cand;
+      if (injury.laterality) {
+        const targetX = injury.laterality === 'left' ? 0.07 : -0.07;
+        candidates.sort((a, b) => Math.abs(a.x - targetX) - Math.abs(b.x - targetX) || a.u - b.u);
+        pick = candidates[0];
+      } else {
+        // Middle of the candidate list (sorted for determinism) keeps the wound
+        // away from region borders; the hash spreads multiple wounds apart.
+        candidates.sort((a, b) => a.u - b.u || a.v - b.v);
+        pick = candidates[(h % Math.max(1, candidates.length - 2)) + 1] ?? candidates[0];
+      }
       targets.push({
         kind,
-        px: pick[0] * tw,
-        py: (flipY ? 1 - pick[1] : pick[1]) * th,
+        px: pick.u * tw,
+        py: (flipY ? 1 - pick.v : pick.v) * th,
         size: SEVERITY_SIZE[injury.severity] * tw,
         rot: ((h >>> 8) % 628) / 100 - Math.PI, // stable rotation −π..π
       });

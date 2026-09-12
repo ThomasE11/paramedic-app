@@ -54,7 +54,10 @@ export const secondYearCases: CaseScenario[] = [
       description: 'University common room, patient sitting on chair leaning forward',
       hazards: ['None identified'],
       bystanders: '3 friends present, one appears to know patient well',
-      environment: 'Indoor, air conditioned'
+      environment: 'Indoor, air conditioned',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/campus-student-uae.png',
+      sceneImageCaption: 'University campus in Sharjah — Student common room'
     },
     initialPresentation: {
       generalImpression: 'Young female, tripod position, using accessory muscles, audible wheeze',
@@ -1307,7 +1310,7 @@ export const secondYearCases: CaseScenario[] = [
       bystanders: '4 colleagues present, one first-aider applying wet towels',
       environment: 'Indoor workshop, warm ambient temperature, well ventilated',
       environmentVariant: 'public',
-      sceneImagePath: '/scene-assets/industrial-workshop-male-uae.png',
+      sceneImagePath: '/scene-assets/y2-004-workshop-flash-burn.png',
       sceneImageCaption: 'Scene — Indoor workshop, warm ambient temperature, well ventilated',
     },
     initialPresentation: {
@@ -1732,7 +1735,7 @@ export const secondYearCases: CaseScenario[] = [
       bystanders: '3 colleagues present, concerned and willing to help',
       environment: 'Indoor, air conditioned office environment',
       environmentVariant: 'public',
-      sceneImagePath: '/scene-assets/office-female-palpitations-syncope-dubai.png',
+      sceneImagePath: '/scene-assets/y2-005-office-ectopic-lower-abdo.png',
       sceneImageCaption: 'Scene — Indoor, air conditioned office environment',
     },
     initialPresentation: {
@@ -3314,7 +3317,7 @@ export const secondYearCases: CaseScenario[] = [
       bystanders: '8 co-workers present, no one trained in CPR',
       environment: 'Indoor office on construction site, air conditioned but patient was outside in heat prior',
       environmentVariant: 'public',
-      sceneImagePath: '/scene-assets/construction-anaphylaxis-male-uae.png',
+      sceneImagePath: '/scene-assets/y2-009-construction-office-arrest.png',
       sceneImageCaption: 'Scene — Indoor office on construction site, air conditioned but patient was outside in heat prior',
     },
     initialPresentation: {

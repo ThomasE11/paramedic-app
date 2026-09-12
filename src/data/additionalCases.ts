@@ -4974,7 +4974,10 @@ export const additionalLevelBandedCases: CaseScenario[] = [
       description: 'Patient at bottom of three marble steps, family gathered, walking frame nearby',
       hazards: ['Marble steps', 'Poor lighting'],
       bystanders: 'Daughter and grandchildren present',
-      environment: 'Villa entrance, warm evening'
+      environment: 'Villa entrance, warm evening',
+      environmentVariant: 'home',
+      sceneImagePath: '/scene-assets/home-medical-male-dubai-apartment.png',
+      sceneImageCaption: 'Scene — Villa entrance, warm evening',
     },
     initialPresentation: {
       generalImpression: 'Elderly man, previously talking, now increasingly drowsy — a "talk and deteriorate" pattern',
@@ -5520,8 +5523,8 @@ export const additionalLevelBandedCases: CaseScenario[] = [
       hazards: ['Crowd', 'Food allergen still on table'],
       bystanders: 'Manager and a first-aider',
       environment: 'Busy restaurant',
-      environmentVariant: 'roadside',
-      sceneImagePath: '/scene-assets/restaurant-anaphylaxis-female-abu-dhabi.png',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/resp-012-mall-restaurant-anaphylaxis-male.png',
       sceneImageCaption: 'Scene — Busy restaurant',
     },
     initialPresentation: {

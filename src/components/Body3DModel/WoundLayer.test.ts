@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { spriteKindFor, hashInjury } from './WoundLayer';
+import { spriteKindFor, hashInjury, vertexMatchesRegion } from './WoundLayer';
 
 describe('spriteKindFor', () => {
   it('maps the field-reported case: surgical wound, red and draining', () => {
@@ -48,6 +48,19 @@ describe('soot decals', () => {
   it('routes a soot injury to the soot sprite', () => {
     expect(spriteKindFor({ kind: 'soot', label: 'Soot', detail: 'Around nose and mouth' }))
       .toBe('soot');
+  });
+});
+
+describe('vertexMatchesRegion laterality', () => {
+  it('keeps a left-chest vertex and rejects the right hemithorax', () => {
+    expect(vertexMatchesRegion(0.06, 1.27, 0.12, 'chest', 'left')).toBe(true);
+    expect(vertexMatchesRegion(-0.06, 1.27, 0.12, 'chest', 'left')).toBe(false);
+    expect(vertexMatchesRegion(-0.06, 1.27, 0.12, 'chest', 'right')).toBe(true);
+    expect(vertexMatchesRegion(0.06, 1.27, 0.12, 'chest', 'right')).toBe(false);
+  });
+
+  it('does not drop a midline vertex when laterality is omitted', () => {
+    expect(vertexMatchesRegion(0, 1.27, 0.12, 'chest')).toBe(true);
   });
 });
 

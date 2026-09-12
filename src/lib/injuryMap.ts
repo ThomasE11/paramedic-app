@@ -173,6 +173,8 @@ export type InjuryKind =
 
 export type InjurySeverity = 'critical' | 'major' | 'minor';
 
+export type InjuryLaterality = 'left' | 'right';
+
 export interface BodyInjury {
   id: string;
   region: BodyRegion;
@@ -185,6 +187,12 @@ export interface BodyInjury {
   /** Anterior body-diagram coordinates (%), for the 2D map. */
   x: number;
   y: number;
+  /**
+   * Patient's own left/right when the authored finding names a side.
+   * Torso regions stay `chest`/`abdomen` (one exam target) and use this
+   * to shift the 2D marker and the 3D decal off the midline.
+   */
+  laterality?: InjuryLaterality;
 }
 
 export interface GeneralAppearance {
@@ -228,6 +236,43 @@ function sev(kind: InjuryKind): InjurySeverity {
   }
 }
 
+const TORSO_REGIONS: ReadonlySet<BodyRegion> = new Set(['chest', 'abdomen', 'pelvis', 'face', 'head', 'neck', 'airway', 'back']);
+
+/** Patient-left is viewer-right on the anterior diagram (clinical convention). */
+const LATERALITY_DX = 8;
+
+function clauseLaterality(clause: string): InjuryLaterality | undefined {
+  const left = isLeftWord(clause);
+  const right = isRightWord(clause);
+  if (left && !right) return 'left';
+  if (right && !left) return 'right';
+  return undefined;
+}
+
+/** Laterality of the first matching, non-negated clause. Mixed sides → undefined. */
+function matchingLaterality(clauses: string[], re: RegExp): InjuryLaterality | undefined {
+  const hits = clauses.filter(c => re.test(c) && !isNegated(c, re));
+  if (!hits.length) return undefined;
+  const sides = new Set(hits.map(clauseLaterality).filter((s): s is InjuryLaterality => Boolean(s)));
+  if (sides.size === 1) return [...sides][0];
+  return undefined;
+}
+
+/**
+ * Open / penetrating chest findings. Includes parasternal / precordial / ICS
+ * entry wounds that never say the word "chest" (cardiac tamponade cases).
+ */
+const CHEST_OPEN_WOUND =
+  /\b(?:(?:penetrating|stab(?:bed| wound)?|gsw|gunshot|sucking|open)\b[\s\w]{0,40}\b(?:chest|thorax|thoracic)|(?:chest|thorax)\b[\s\w]{0,40}\b(?:stab|gsw|gunshot|penetrat|sucking|open wound)|sucking chest|open pneumothorax|(?:stab(?:bed| wound)?|gsw|gunshot|entry wound|entrance wound|penetrat\w*)\b[\s\w]{0,40}\b(?:parasternal|precordial|intercostal|\bics\b)|(?:parasternal|precordial)\b[\s\w]{0,40}\b(?:stab|wound|gsw|gunshot|entry))/;
+
+const CHEST_FLAIL = /\b(flail (segment|chest)|paradoxical (chest|movement|wall))\b/;
+const CHEST_BLEED =
+  /\b(?:chest|thorax|thoracic)\b[\s\w]*\b(?:bleed(?:ing)?|haemorrhag\w*|hemorrhag\w*)\b|\b(?:bleed(?:ing)?|haemorrhag\w*|hemorrhag\w*)\b[\s\w]*\b(?:chest|thorax|thoracic)\b/;
+const CHEST_BRUISE =
+  /\b(chest|sternum|sternal)\b[\s\w]*\b(bruis|ecchymos|seatbelt)\b|\bseatbelt sign\b/;
+const BURN_FINDING =
+  /\b(burn|burns|scald|charred|singed|partial thickness|full thickness|tbsa|entry burn|exit burn)\b/;
+
 /**
  * Build the structured injury list. Reuses the legacy anatomy detection for
  * the limbs, then adds torso/chest/abdomen/airway findings the procedural
@@ -239,13 +284,24 @@ export function inferInjuries(caseData: CaseScenario): BodyInjury[] {
   const a = inferAnatomy(caseData);
   const injuries: BodyInjury[] = [];
 
-  const push = (region: BodyRegion, kind: InjuryKind, label: string, detail: string, dx = 0, dy = 0) => {
+  const push = (
+    region: BodyRegion,
+    kind: InjuryKind,
+    label: string,
+    detail: string,
+    dx = 0,
+    dy = 0,
+    laterality?: InjuryLaterality,
+  ) => {
     const anchor = REGION_ANCHOR[region];
+    const sideDx = laterality && TORSO_REGIONS.has(region)
+      ? (laterality === 'left' ? LATERALITY_DX : -LATERALITY_DX)
+      : 0;
     injuries.push({
       id: `${region}-${kind}-${injuries.length}`,
-      region, kind, label, detail,
+      region, kind, label, detail, laterality,
       severity: sev(kind),
-      x: anchor.x + dx,
+      x: anchor.x + dx + sideDx,
       y: anchor.y + dy,
     });
   };
@@ -258,16 +314,16 @@ export function inferInjuries(caseData: CaseScenario): BodyInjury[] {
     return null;
   };
   const ll = legLabel(a.leftLeg);
-  if (ll) push('left-leg', ll.kind, ll.label, `Left leg: ${ll.label.toLowerCase()} — classic of proximal femur / pelvic injury.`);
-  if (a.leftLeg.bleeding) push('left-leg', 'bleeding', 'Bleeding', 'Active haemorrhage from the left lower limb.', 2, 6);
+  if (ll) push('left-leg', ll.kind, ll.label, `Left leg: ${ll.label.toLowerCase()} — classic of proximal femur / pelvic injury.`, 0, 0, 'left');
+  if (a.leftLeg.bleeding) push('left-leg', 'bleeding', 'Bleeding', 'Active haemorrhage from the left lower limb.', 2, 6, 'left');
   const rl = legLabel(a.rightLeg);
-  if (rl) push('right-leg', rl.kind, rl.label, `Right leg: ${rl.label.toLowerCase()}.`);
-  if (a.rightLeg.bleeding) push('right-leg', 'bleeding', 'Bleeding', 'Active haemorrhage from the right lower limb.', -2, 6);
+  if (rl) push('right-leg', rl.kind, rl.label, `Right leg: ${rl.label.toLowerCase()}.`, 0, 0, 'right');
+  if (a.rightLeg.bleeding) push('right-leg', 'bleeding', 'Bleeding', 'Active haemorrhage from the right lower limb.', -2, 6, 'right');
 
-  if (a.leftArm.deformed) push('left-arm', 'deformity', 'Deformity', 'Left upper limb deformity / fracture.');
-  if (a.leftArm.bleeding) push('left-arm', 'bleeding', 'Bleeding', 'Active haemorrhage from the left arm.', 0, 6);
-  if (a.rightArm.deformed) push('right-arm', 'deformity', 'Deformity', 'Right upper limb deformity / fracture.');
-  if (a.rightArm.bleeding) push('right-arm', 'bleeding', 'Bleeding', 'Active haemorrhage from the right arm.', 0, 6);
+  if (a.leftArm.deformed) push('left-arm', 'deformity', 'Deformity', 'Left upper limb deformity / fracture.', 0, 0, 'left');
+  if (a.leftArm.bleeding) push('left-arm', 'bleeding', 'Bleeding', 'Active haemorrhage from the left arm.', 0, 6, 'left');
+  if (a.rightArm.deformed) push('right-arm', 'deformity', 'Deformity', 'Right upper limb deformity / fracture.', 0, 0, 'right');
+  if (a.rightArm.bleeding) push('right-arm', 'bleeding', 'Bleeding', 'Active haemorrhage from the right arm.', 0, 6, 'right');
 
   // ---- Head / face ----
   if (a.facialInjury) {
@@ -291,18 +347,19 @@ export function inferInjuries(caseData: CaseScenario): BodyInjury[] {
   }
 
   // ---- Chest ----
-  if (has(/\b(flail (segment|chest)|paradoxical (chest|movement|wall))\b/)) {
-    push('chest', 'flail', 'Flail segment', 'Flail chest — paradoxical movement, underlying pulmonary contusion.', -8, 0);
+  if (has(CHEST_FLAIL)) {
+    push('chest', 'flail', 'Flail segment', 'Flail chest — paradoxical movement, underlying pulmonary contusion.', 0, 0, matchingLaterality(clauses, CHEST_FLAIL));
   }
-  // Open chest wound: keywords must co-occur with chest IN THE SAME CLAUSE.
-  if (has(/\b(penetrating|stab(bed| wound)?|gsw|gunshot|sucking|open)\b[\s\w]*\b(chest|thorax|thoracic)\b/) || has(/\b(chest|thorax)\b[\s\w]*\b(stab|gsw|gunshot|penetrat|sucking|open wound)\b/) || has(/\bsucking chest\b|\bopen pneumothorax\b/)) {
-    push('chest', 'wound', 'Open chest wound', 'Penetrating / sucking chest wound — needs a chest seal.', 8, -2);
+  // Open chest wound: keywords must co-occur with chest (or a chest-site
+  // synonym such as parasternal / precordial / ICS) IN THE SAME CLAUSE.
+  if (has(CHEST_OPEN_WOUND)) {
+    push('chest', 'wound', 'Open chest wound', 'Penetrating / sucking chest wound — needs a chest seal.', 0, -2, matchingLaterality(clauses, CHEST_OPEN_WOUND));
   }
-  if (has(/\b(?:chest|thorax|thoracic)\b[\s\w]*\b(?:bleed(?:ing)?|haemorrhag\w*|hemorrhag\w*)\b|\b(?:bleed(?:ing)?|haemorrhag\w*|hemorrhag\w*)\b[\s\w]*\b(?:chest|thorax|thoracic)\b/)) {
-    push('chest', 'bleeding', 'Chest bleeding', 'Active external haemorrhage from the chest wound.', 6, 3);
+  if (has(CHEST_BLEED)) {
+    push('chest', 'bleeding', 'Chest bleeding', 'Active external haemorrhage from the chest wound.', 0, 3, matchingLaterality(clauses, CHEST_BLEED));
   }
-  if (has(/\b(chest|sternum|sternal)\b[\s\w]*\b(bruis|ecchymos|seatbelt)\b/) || has(/\bseatbelt sign\b/)) {
-    push('chest', 'bruising', 'Chest bruising', 'Chest-wall bruising / seatbelt sign — suspect underlying injury.', 0, 4);
+  if (has(CHEST_BRUISE)) {
+    push('chest', 'bruising', 'Chest bruising', 'Chest-wall bruising / seatbelt sign — suspect underlying injury.', 0, 4, matchingLaterality(clauses, CHEST_BRUISE));
   }
 
   // ---- Abdomen / pelvis ----
@@ -326,12 +383,30 @@ export function inferInjuries(caseData: CaseScenario): BodyInjury[] {
   }
 
   // ---- Burns ----
-  if (has(/\b(burn|burns|scald|charred|singed|partial thickness|full thickness|tbsa)\b/)) {
-    const burnRegion: BodyRegion = has(/\b(facial|face|airway|singed (nasal|facial|eyebrow)|soot)\b/) ? 'face'
-      : has(/\b(arm|hand|upper limb)\b/) ? 'left-arm'
-      : has(/\b(leg|thigh|lower limb)\b/) ? 'left-leg'
-      : 'chest';
-    push(burnRegion, 'burn', 'Burn', 'Burn injury — estimate TBSA, watch for airway involvement.');
+  // One finding per clause so entry/exit burns (right hand + left foot) both
+  // land, and laterality follows the clause rather than defaulting left.
+  const seenBurnRegions = new Set<BodyRegion>();
+  for (const clause of clauses) {
+    if (!BURN_FINDING.test(clause) || isNegated(clause, BURN_FINDING)) continue;
+    const side = clauseLaterality(clause);
+    const burnRegion: BodyRegion | null =
+      /\b(facial|face|airway|singed|soot|nose|mouth|lip)\b/.test(clause) ? 'face'
+      : /\b(arm|hand|forearm|upper limb|wrist|elbow|shoulder)\b/.test(clause)
+        ? (side === 'right' ? 'right-arm' : 'left-arm')
+      : /\b(leg|thigh|foot|ankle|lower limb|shin)\b/.test(clause)
+        ? (side === 'right' ? 'right-leg' : 'left-leg')
+      : /\b(chest|torso|trunk|abdomen|back|neck)\b/.test(clause) ? 'chest'
+      : null;
+    if (!burnRegion || seenBurnRegions.has(burnRegion)) continue;
+    seenBurnRegions.add(burnRegion);
+    const limbSide: InjuryLaterality | undefined =
+      burnRegion === 'right-arm' || burnRegion === 'right-leg' ? 'right'
+      : burnRegion === 'left-arm' || burnRegion === 'left-leg' ? 'left'
+      : side;
+    push(burnRegion, 'burn', 'Burn', 'Burn injury — estimate TBSA, watch for airway involvement.', 0, 0, limbSide);
+  }
+  if (seenBurnRegions.size === 0 && has(BURN_FINDING)) {
+    push('chest', 'burn', 'Burn', 'Burn injury — estimate TBSA, watch for airway involvement.');
   }
 
   // ---- Amputation ----
@@ -342,7 +417,7 @@ export function inferInjuries(caseData: CaseScenario): BodyInjury[] {
     const region: BodyRegion = lowerLimb
       ? right ? 'right-leg' : 'left-leg'
       : right ? 'right-arm' : 'left-arm';
-    push(region, 'amputation', 'Amputation', 'Traumatic amputation — tourniquet, retrieve the part.');
+    push(region, 'amputation', 'Amputation', 'Traumatic amputation — tourniquet, retrieve the part.', 0, 0, right ? 'right' : 'left');
   }
 
   // Some cases author the anatomy and the bleeding as adjacent exposure
@@ -383,6 +458,17 @@ export function inferGeneralAppearance(caseData: CaseScenario): GeneralAppearanc
 // neck-cspine, chest, abdomen, pelvis, left/right-arm, left/right-leg,
 // posterior-logroll. These are the keys that land in `assessedRegions`,
 // so a finding reveals exactly when its region has been examined.
+/**
+ * World-space X offset for a named laterality. Patient's RIGHT is negative X
+ * (screen-left); patient's LEFT is positive X. Magnitude sits mid-hemithorax
+ * so a chest wound stays on the ribcage and does not jump onto the arm.
+ */
+export function injuryWorldOffsetX(laterality?: InjuryLaterality, magnitude = 0.07): number {
+  if (laterality === 'left') return magnitude;
+  if (laterality === 'right') return -magnitude;
+  return 0;
+}
+
 export function injuryRegionTo3D(region: BodyRegion): string {
   switch (region) {
     case 'left-arm': return 'left-arm';

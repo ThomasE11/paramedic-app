@@ -54,7 +54,7 @@ export const litflCaseDatabase: CaseScenario[] = [
       bystanders: '3 colleagues present, one is a trained first-aider',
       environment: 'Indoor air-conditioned office, ambient 22°C',
       environmentVariant: 'public',
-      sceneImagePath: '/scene-assets/office-female-palpitations-syncope-dubai.png',
+      sceneImagePath: '/scene-assets/y2-009-construction-office-arrest.png',
       sceneImageCaption: 'Scene — Indoor air-conditioned office, ambient 22°C',
       accessIssues: ['Security gate requires badge', 'Narrow corridors in portacabin'],
       extricationNeeded: false
@@ -296,6 +296,8 @@ export const litflCaseDatabase: CaseScenario[] = [
       hazards: [],
       bystanders: 'Wife present, speaks English and Arabic',
       environment: 'Air-conditioned apartment, clean',
+      sceneImagePath: '/scene-assets/litfl-003-renal-failure-hyperkalemia-apartment.png',
+      sceneImageCaption: 'Scene — Air-conditioned apartment, clean',
       accessIssues: ['Elevator access to 7th floor', 'Carry chair may be needed'],
       extricationNeeded: false
     },
@@ -1008,7 +1010,7 @@ export const litflCaseDatabase: CaseScenario[] = [
       bystanders: '4 colleagues, office first-aider with AED',
       environment: 'Air-conditioned office, 5th floor',
       environmentVariant: 'public',
-      sceneImagePath: '/scene-assets/office-female-palpitations-syncope-dubai.png',
+      sceneImagePath: '/scene-assets/office-medical-dubai.png',
       sceneImageCaption: 'Scene — Air-conditioned office, 5th floor',
       accessIssues: ['Elevator access', 'Narrow office corridors'],
       extricationNeeded: false
@@ -1234,7 +1236,8 @@ export const litflCaseDatabase: CaseScenario[] = [
       bystanders: 'Roommate present, anxious',
       environment: 'Indoor, small bathroom, warm',
       environmentVariant: 'home',
-      sceneImagePath: '/scene-assets/home-medical-female-dubai-apartment.png', // TODO: create dedicated bathroom staff accommodation scene via Blender/compositing
+      sceneImagePath: '/scene-assets/staff-accommodation-collapse-sharjah.png',
+      sceneImageCaption: 'Scene — Shared staff accommodation bathroom, Al Nahda, Sharjah',
       accessIssues: ['Small bathroom — limited working space', 'Need to move patient to larger area'],
       extricationNeeded: false
     },

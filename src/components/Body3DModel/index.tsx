@@ -61,8 +61,16 @@ import type { CaseScenario, CaseCategory, VitalSigns } from '@/types';
 import type { ClinicalSoundState } from '@/data/clinicalSounds';
 import { playBreathSound, playHeartSound, playPercussionSound, playBowelSound, stopAllSounds, getZoneBreathSound } from '@/data/clinicalSounds';
 import type { BowelSoundType, BreathSoundType } from '@/data/clinicalSounds';
-import { inferInjuries, injuryRegionTo3D, type BodyInjury, type BodyRegion, type InjuryKind, type InjurySeverity } from '@/lib/injuryMap';
+import { inferInjuries, injuryRegionTo3D, injuryWorldOffsetX, type BodyInjury, type BodyRegion, type InjuryKind, type InjurySeverity } from '@/lib/injuryMap';
 import { classifyBodyPoint } from '@/lib/regionClassifier';
+import {
+  applyVisualEyeEffect,
+  describePupilFinding,
+  getPupilProfile,
+  isPupilExamAction,
+  nearestPupilExamAction,
+  type PupilProfile,
+} from '@/lib/pupilExam';
 import { hashInjury } from './WoundLayer';
 import { ActiveBleedSprites } from './ActiveBleedLayer';
 import { FocusedWoundLayer } from './FocusedWoundLayer';
@@ -136,15 +144,6 @@ interface ExamLandmark {
   actionId?: string;
   tone?: 'neutral' | 'airway' | 'breathing' | 'circulation' | 'abdomen' | 'neuro' | 'warning';
   anchorSpace?: 'author' | 'mesh';
-}
-
-interface PupilProfile {
-  leftMm: number;
-  rightMm: number;
-  leftReaction: string;
-  rightReaction: string;
-  note: string;
-  abnormal: boolean;
 }
 
 interface OxygenEquipmentVisual {
@@ -348,29 +347,6 @@ function skinEffectStrength(visualState: PatientVisualState | null | undefined, 
   return Math.max(0, ...((visualState?.skinEffects ?? [])
     .filter(effect => effect.kind === kind)
     .map(effect => effect.intensity)));
-}
-
-function applyVisualEyeEffect(base: PupilProfile, visualState?: PatientVisualState | null): PupilProfile {
-  const effect = visualState?.eyeEffects;
-  if (!effect || effect.kind === 'normal') return base;
-  if (effect.kind === 'pinpoint') {
-    return {
-      leftMm: 1,
-      rightMm: 1,
-      leftReaction: 'sluggish',
-      rightReaction: 'sluggish',
-      note: effect.detail || 'Pinpoint pupils. Check toxidrome and ventilation.',
-      abnormal: true,
-    };
-  }
-  return {
-    leftMm: 6,
-    rightMm: 6,
-    leftReaction: 'sluggish',
-    rightReaction: 'sluggish',
-    note: effect.detail || 'Dilated pupils. Correlate with GCS, drugs, hypoxia, and perfusion.',
-    abnormal: true,
-  };
 }
 
 type AbdomenQuadrant = 'ruq' | 'luq' | 'rlq' | 'llq';
@@ -893,7 +869,7 @@ function LandmarkMarkers({
                 }
                 onSelect(marker.region);
               }}
-              className={`group pointer-events-auto relative flex items-center justify-center ${isPulseMarker && !isDetail ? 'h-9 w-9' : isDetail ? 'h-6 w-6' : 'h-7 w-7'}`}
+              className={`group pointer-events-auto relative flex items-center justify-center ${isPulseMarker && !isDetail ? 'h-9 w-9' : marker.actionId && isPupilExamAction(marker.actionId) ? 'h-11 w-11' : isDetail ? 'h-6 w-6' : 'h-7 w-7'}`}
               data-compact-patient={compactPatient || undefined}
               aria-label={marker.actionId?.startsWith('pulse-') ? `Check ${marker.label.toLowerCase()} pulse` : `${marker.label}: ${marker.sublabel}`}
               title={`${marker.label} — ${marker.sublabel}`}
@@ -1019,7 +995,7 @@ function RevealedFindingMarkers({
         const fallback = FINDING_ANCHORS[region3d];
         if (!fallback) return null;
         const slot = (injurySlots[region3d] = (injurySlots[region3d] ?? -1) + 1);
-        const fx = fallback[0] - 0.17;
+        const fx = fallback[0] + (inj.laterality ? injuryWorldOffsetX(inj.laterality) : -0.17);
         const fy = fallback[1] - slot * 0.11; // ~21px steps at overview zoom — clears the badge height
         // Anchor the finding badge to the real surface at the offset (x, y).
         const anchor: [number, number, number] = sampler && region3d !== 'posterior-logroll'
@@ -1087,7 +1063,8 @@ function InjuryWoundMarkers({
         if (!base) return null;
         const n = (slots[region3d] = (slots[region3d] ?? -1) + 1);
         // Small fan so several wounds in one region don't stack dead-centre.
-        const bx = base[0] + (n % 2 === 0 ? 0.03 : -0.03) * Math.ceil(n / 2);
+        // Laterality shifts the blob onto the named hemithorax first.
+        const bx = base[0] + injuryWorldOffsetX(inj.laterality) + (n % 2 === 0 ? 0.03 : -0.03) * Math.ceil(n / 2);
         const by = base[1] - 0.04 * n;
         const anchor: [number, number, number] = sampler && region3d !== 'posterior-logroll'
           ? sampler(bx, by)
@@ -2388,94 +2365,6 @@ function TreatmentEquipmentOverlay({
   );
 }
 
-function getPupilProfile(caseData: CaseScenario): PupilProfile {
-  const raw = Array.isArray(caseData.abcde?.disability?.pupils)
-    ? caseData.abcde.disability.pupils.join(' ')
-    : caseData.abcde?.disability?.pupils || '';
-  const text = raw.toLowerCase();
-  const sideSegment = (side: 'left' | 'right'): string => {
-    const otherSide = side === 'left' ? 'right' : 'left';
-    const start = text.indexOf(side);
-    if (start < 0) return '';
-    const nextSide = text.indexOf(otherSide, start + side.length);
-    return nextSide > start ? text.slice(start, nextSide) : text.slice(start);
-  };
-  const parseSideMm = (side: 'left' | 'right'): number | null => {
-    const segment = sideSegment(side);
-    const match = segment.match(/(\d+(?:\.\d+)?)\s*mm/);
-    return match ? Number(match[1]) : null;
-  };
-  const parseSideReaction = (side: 'left' | 'right'): string | null => {
-    const segment = sideSegment(side);
-    if (!segment) return null;
-    if (/fixed|non-reactive|non reactive|unreactive/.test(segment)) return 'fixed';
-    if (/sluggish|slow/.test(segment)) return 'sluggish';
-    if (/brisk|reactive|pearl|perrl/.test(segment)) return 'brisk';
-    return null;
-  };
-  const leftSpecificMm = parseSideMm('left');
-  const rightSpecificMm = parseSideMm('right');
-  const leftSpecificReaction = parseSideReaction('left');
-  const rightSpecificReaction = parseSideReaction('right');
-
-  if (leftSpecificMm !== null || rightSpecificMm !== null || leftSpecificReaction || rightSpecificReaction) {
-    const fallbackMm = text.includes('pinpoint') || text.includes('constrict') ? 1 : text.includes('dilated') ? 6 : 3;
-    const leftMm = leftSpecificMm ?? fallbackMm;
-    const rightMm = rightSpecificMm ?? fallbackMm;
-    const leftReaction = leftSpecificReaction ?? (text.includes('fixed') || text.includes('non-reactive') ? 'fixed' : text.includes('sluggish') ? 'sluggish' : 'brisk');
-    const rightReaction = rightSpecificReaction ?? (text.includes('fixed') || text.includes('non-reactive') ? 'fixed' : text.includes('sluggish') ? 'sluggish' : 'brisk');
-
-    return {
-      leftMm,
-      rightMm,
-      leftReaction,
-      rightReaction,
-      note: raw || 'Compare pupil size, equality, and direct response.',
-      abnormal: leftMm !== rightMm || leftReaction !== 'brisk' || rightReaction !== 'brisk',
-    };
-  }
-
-  if (text.includes('pinpoint') || text.includes('constrict')) {
-    return {
-      leftMm: 1,
-      rightMm: 1,
-      leftReaction: text.includes('fixed') ? 'fixed' : 'sluggish',
-      rightReaction: text.includes('fixed') ? 'fixed' : 'sluggish',
-      note: raw || 'Pinpoint pupils. Check toxidrome and ventilation.',
-      abnormal: true,
-    };
-  }
-  if (text.includes('unequal') || text.includes('anisocoria')) {
-    return {
-      leftMm: 5,
-      rightMm: 2,
-      leftReaction: text.includes('fixed') ? 'fixed' : 'sluggish',
-      rightReaction: 'reactive',
-      note: raw || 'Unequal pupils. Consider raised ICP, trauma, or focal neurological pathology.',
-      abnormal: true,
-    };
-  }
-  if (text.includes('dilated')) {
-    return {
-      leftMm: 6,
-      rightMm: 6,
-      leftReaction: text.includes('fixed') || text.includes('non-reactive') ? 'fixed' : 'sluggish',
-      rightReaction: text.includes('fixed') || text.includes('non-reactive') ? 'fixed' : 'sluggish',
-      note: raw || 'Dilated pupils. Correlate with GCS, drugs, hypoxia, and perfusion.',
-      abnormal: true,
-    };
-  }
-
-  return {
-    leftMm: 3,
-    rightMm: 3,
-    leftReaction: 'brisk',
-    rightReaction: 'brisk',
-    note: raw || 'Equal, round, reactive pupils. Compare both eyes in ambient and direct light.',
-    abnormal: false,
-  };
-}
-
 function getAirwayCue(caseData: CaseScenario): { status: string; cues: string[]; compromised: boolean } {
   const airway = caseData.abcde?.airway;
   const findings = airway?.findings || [];
@@ -3614,26 +3503,9 @@ function getFinding(
     return 'Soft, non-tender in all 4 quadrants. No guarding, rigidity, or masses.';
   }
   // ===== FACE — Eyes =====
-  if (actionId === 'pupils-size') {
-    const pupilData = typeof disability?.pupils === 'string' ? disability.pupils.toLowerCase() : '';
-    if (pupilData.includes('dilated')) return 'Left: 6mm. Right: 6mm.';
-    if (pupilData.includes('unequal') || pupilData.includes('anisocoria')) return 'Left: 4mm. Right: 2mm.';
-    if (pupilData.includes('pinpoint') || pupilData.includes('constrict')) return 'Left: 1mm. Right: 1mm.';
-    return 'Left: 3mm. Right: 3mm.';
-  }
-  if (actionId === 'pupils-reactivity') {
-    const pupilData = typeof disability?.pupils === 'string' ? disability.pupils.toLowerCase() : '';
-    if (pupilData.includes('fixed') || pupilData.includes('non-reactive') || pupilData.includes('unreactive')) return 'Left: Fixed, non-reactive. Right: Fixed, non-reactive.';
-    if (pupilData.includes('sluggish')) return 'Left: Reactive. Right: Sluggish response.';
-    if (pupilData.includes('unequal')) return 'Left: Brisk direct and consensual. Right: Sluggish direct, absent consensual.';
-    return 'Left: Brisk direct and consensual. Right: Brisk direct and consensual.';
-  }
-  if (actionId === 'pupils-equality') {
-    const pupilData = typeof disability?.pupils === 'string' ? disability.pupils.toLowerCase() : '';
-    if (pupilData.includes('unequal') || pupilData.includes('anisocoria')) return 'Unequal — left larger than right.';
-    if (pupilData.includes('dilated')) return 'Equal — both dilated.';
-    if (pupilData.includes('pinpoint')) return 'Equal — both constricted.';
-    return 'Equal bilaterally.';
+  if (isPupilExamAction(actionId) && actionId !== 'eyes-inspect') {
+    return describePupilFinding(getPupilProfile(caseData), actionId)
+      ?? 'Equal, round, reactive pupils.';
   }
   if (actionId === 'eyes-inspect') {
     // Look across face-detail, head, and neurological for eye-relevant signs:
@@ -3740,7 +3612,12 @@ function getFinding(
   // ===== FACE — Jaw =====
   if (actionId === 'jaw-palpate') return 'Jaw stable. No crepitus. TMJ non-tender. Full range of movement.';
   // ===== HEAD =====
-  if (actionId === 'pupils-inspect') return typeof disability?.pupils === 'string' ? disability.pupils : 'Equal and reactive';
+  if (actionId === 'pupils-inspect') {
+    const pupils = disability?.pupils;
+    if (Array.isArray(pupils) && pupils.length) return pupils.join('; ');
+    if (typeof pupils === 'string' && pupils.trim()) return pupils;
+    return 'Equal and reactive';
+  }
   // ===== NECK — Additional =====
   if (actionId === 'neck-emphysema') {
     const neckFindings = ss?.neck || [];
@@ -5971,6 +5848,13 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       handleExamAction(`${activeRegion === 'right-leg' ? 'r' : 'l'}-foot-palpate`);
       return true;
     }
+    if (activeRegion === 'face') {
+      const pupilAction = nearestPupilExamAction(point);
+      if (pupilAction) {
+        handleExamAction(pupilAction);
+        return true;
+      }
+    }
     let best: { actionId: string; d2: number } | null = null;
     for (const lm of EXAM_LANDMARKS) {
       if (lm.region !== activeRegion || lm.level !== 'detail' || !lm.actionId) continue;
@@ -6430,25 +6314,27 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               <directionalLight position={[4, 8, 5]} intensity={bayVariant === 'home' ? 0.32 : 1.45} color="#fff2e6" />
               <directionalLight position={[0, 4, -5]} intensity={bayVariant === 'home' ? 0.22 : 0.95} color="#ffffff" />
               {activeRegion === 'face' && (
-                <pointLight
-                  name="pupil-exam-light"
-                  position={[0, 1.88, 0.4]}
-                  intensity={3.0}
-                  distance={1.6}
-                  decay={2}
-                  color="#fffcf5" // warmer exam light for pupil dilation visibility
-                />
-              )}
-              {/* Fill light under chin to eliminate dark shadows during eye assessment */}
-              {activeRegion === 'face' && (
-                <spotLight
-                  name="exam-fill-light"
-                  position={[0, 2.8, -1.2]}
-                  angle={Math.PI * 0.64}
-                  penumbra={0.38}
-                  decay={2}
-                  color="#f5f2ed" // softer fill
-                />
+                <FaceEquipmentFrame frame={faceAttachment}>
+                  <pointLight
+                    name="pupil-exam-light"
+                    position={[0, 1.62, 0.42]}
+                    intensity={3.2}
+                    distance={0.9}
+                    decay={2}
+                    color="#fffcf5"
+                  />
+                  <spotLight
+                    name="exam-fill-light"
+                    position={[0, 1.42, 0.28]}
+                    target-position={[0, 1.55, 0.16]}
+                    intensity={1.6}
+                    angle={Math.PI * 0.45}
+                    penumbra={0.55}
+                    distance={1.1}
+                    decay={2}
+                    color="#f5f2ed"
+                  />
+                </FaceEquipmentFrame>
               )}
 
               <TreatmentBayEnvironment

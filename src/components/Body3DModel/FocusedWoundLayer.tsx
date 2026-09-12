@@ -11,7 +11,7 @@
 import { useMemo } from 'react';
 import { Html } from '@react-three/drei';
 import type { BodyInjury } from '@/lib/injuryMap';
-import { injuryRegionTo3D } from '@/lib/injuryMap';
+import { injuryRegionTo3D, injuryWorldOffsetX } from '@/lib/injuryMap';
 import type { SurfaceSampler } from './BodyMesh';
 import { spriteKindFor } from './WoundLayer';
 import { drawWound } from './woundSprites';
@@ -69,10 +69,12 @@ export function FocusedWoundLayer({
       {visible.map(({ injury, url }, index) => {
         const region = injuryRegionTo3D(injury.region);
         const anchor = ANCHORS[region] ?? ANCHORS.chest;
+        const ax = anchor[0] + injuryWorldOffsetX(injury.laterality);
         const sampled = sampler && region !== 'posterior-logroll'
-          ? sampler(anchor[0], anchor[1], { coordinateSpace: 'author' })
-          : anchor;
-        const safe = sampled.every(Number.isFinite) ? sampled : anchor;
+          ? sampler(ax, anchor[1], { coordinateSpace: 'author' })
+          : [ax, anchor[1], anchor[2]] as [number, number, number];
+        const fallback: [number, number, number] = [ax, anchor[1], anchor[2]];
+        const safe = sampled.every(Number.isFinite) ? sampled : fallback;
         const position: [number, number, number] = [safe[0] + index * 0.035, safe[1] + 0.075, safe[2]];
         return (
           <Html

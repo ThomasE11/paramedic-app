@@ -56,7 +56,7 @@ export const moreTraumaCases: CaseScenario[] = [
       bystanders: 'Multiple bystanders, one applying pressure',
       environment: 'Outdoor, nighttime, poor lighting',
       environmentVariant: 'public',
-      sceneImagePath: '/scene-assets/trauma-005-trapped-driver-flail-chest.png',
+      sceneImagePath: '/scene-assets/trauma-004-park-stabbing-tamponade.png',
       sceneImageCaption: 'Scene — Outdoor, nighttime, poor lighting',
       accessIssues: ['Crowd control needed'],
       extricationNeeded: false
@@ -2099,7 +2099,7 @@ export const moreTraumaCases: CaseScenario[] = [
       bystanders: 'Security guard from adjacent hotel directing traffic; ~6 bystanders crowding; English-speaking witness who saw the impact',
       environment: 'Nighttime, street lighting from overhead lamp ~3m away; warm and humid; asphalt road surface dry',
       environmentVariant: 'roadside',
-      sceneImagePath: '/scene-assets/nightclub-stabbing-male-dubai.png',
+      sceneImagePath: '/scene-assets/pedestrian-road-night-female-45.png',
       sceneImageCaption: 'Scene — Nighttime, street lighting from overhead lamp ~3m away; warm and humid; asphalt road surface dry',
       accessIssues: ['Patient lying on hot road surface', 'Crew approach from upstream traffic side carries risk if oncoming lane not closed'],
       extricationNeeded: false,
@@ -2577,7 +2577,10 @@ export const moreTraumaCases: CaseScenario[] = [
       description: 'Construction site, patient supine near scaffolding',
       hazards: ['Construction equipment', 'Uneven ground', 'Debris'],
       bystanders: 'Multiple workers, foreman',
-      environment: 'Dusty, outdoor'
+      environment: 'Dusty, outdoor',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/construction-fall-male-29-dubaihills.png',
+      sceneImageCaption: 'Scene — Construction site, patient supine near scaffolding',
     },
     initialPresentation: {
       generalImpression: 'Young male, unresponsive, bleeding from head',
@@ -3937,7 +3940,10 @@ export const cardiacECGCases: CaseScenario[] = [
       description: 'Office environment',
       hazards: [],
       bystanders: 'Several colleagues',
-      environment: 'Comfortable'
+      environment: 'Comfortable',
+      environmentVariant: 'public',
+      sceneImagePath: '/scene-assets/office-medical-dubai.png',
+      sceneImageCaption: 'Scene — Office in Business Bay, Dubai',
     },
     initialPresentation: {
       generalImpression: 'Middle-aged male, appears comfortable but anxious',
