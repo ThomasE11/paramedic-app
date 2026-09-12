@@ -119,18 +119,6 @@ const HOTSPOT_POSITIONS = [
   { x: 66, y: 48 },
 ];
 
-const HAZARD_LABELS: Record<string, string> = {
-  traffic: 'Traffic',
-  fire: 'Fire / heat',
-  electrical: 'Electrical',
-  violence: 'Violence / weapons',
-  biohazard: 'Biohazard',
-  weather: 'Weather',
-  structural: 'Structural',
-  access: 'Access / extrication',
-  animals: 'Animals / pests',
-};
-
 type TemporalTreatment = {
   label: string;
   note: string;
@@ -1470,12 +1458,15 @@ function SceneArrivalVisual({
   const injuryOverlays = focus === 'impression' ? inferInjuries(caseData).slice(0, 5) : [];
   const showHazardHotspots = focus === 'hazards' || (!sceneImage && focus !== 'impression');
   // Approach is deliberately minimal — mark only the patient so the student
-  // sees who and where, with no clinical callouts. Hazards view likewise marks
-  // just the patient (hazards get their own hotspots). The full labelled
-  // callout set is reserved for the hands-on impression view.
+  // sees who and where, with no clinical callouts. The hazards view belongs to
+  // hazard hotspots alone; repeating the patient callout there competes with
+  // the scan and can obscure the photograph. The full labelled callout set is
+  // reserved for the hands-on impression view.
   const visibleCallouts = focus === 'impression'
     ? sceneCallouts
-    : sceneCallouts.filter(c => c.id === 'patient');
+    : focus === 'approach'
+      ? sceneCallouts.filter(c => c.id === 'patient')
+      : [];
   const visualModeLabel = focus === 'hazards'
     ? 'Hazard scan'
     : focus === 'impression'
@@ -1651,8 +1642,8 @@ function SceneArrivalVisual({
             </div>
           )}
           {showHazardHotspots && !hazardHotspots.length && (
-            <div className="absolute left-5 top-5 rounded-full border border-emerald-300/40 bg-emerald-300/10 px-3 py-1.5 text-[10px] text-emerald-50">
-              No obvious environmental hazards visible
+            <div className={`absolute z-10 rounded-full border border-emerald-300/40 bg-black/55 px-3 py-1.5 text-[10px] text-emerald-50 shadow-xl backdrop-blur-md ${sceneImage ? 'right-4 top-4' : 'left-5 top-5'}`}>
+              No obvious hazards visible
             </div>
           )}
           {!sceneImage && (
@@ -1891,44 +1882,46 @@ export function SceneSurveyPanel({ caseData, onEnterScene, onBack }: SceneSurvey
                 </ul>
               </div>
             )}
-            <div className="grid gap-2 sm:grid-cols-2">
-              {hazardHotspots.map(({ id, label, kind, icon: Icon }) => {
-                const selected = hazardsIdentified.includes(id);
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => toggleHazard(id)}
-                    className={`flex items-start gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-all ${
-                      selected
-                        ? 'border-amber-500 bg-amber-500/10 text-foreground'
-                        : 'border-border text-muted-foreground hover:border-border/80 hover:bg-muted/40'
-                    }`}
-                  >
-                    <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${selected ? 'text-amber-600 dark:text-amber-400' : ''}`} />
-                    <span className="min-w-0">
-                      <span className="block font-medium">{label}</span>
-                      <span className="text-[11px] text-muted-foreground">{HAZARD_LABELS[kind] || 'Scene hazard'}</span>
-                    </span>
-                  </button>
-                );
-              })}
+            {hazardHotspots.length > 0 && (
+              <div className="rounded-xl border border-amber-200/70 bg-amber-50/55 px-3.5 py-3 dark:border-amber-900/55 dark:bg-amber-950/15">
+                <p className="text-xs font-semibold text-amber-950 dark:text-amber-100">
+                  Confirm hazards on the photograph
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Select the amber markers above; confirmed findings appear here.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5" aria-live="polite">
+                  {hazardsIdentified.filter(id => id !== 'none').length > 0 ? (
+                    hazardsIdentified.filter(id => id !== 'none').map(id => (
+                      <span key={id} className="inline-flex items-center gap-1 rounded-full border border-amber-300/70 bg-amber-100 px-2.5 py-1 text-xs text-amber-950 dark:border-amber-700 dark:bg-amber-950/70 dark:text-amber-100">
+                        <CheckCircle2 className="h-3 w-3" />
+                        {id}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-amber-900/70 dark:text-amber-100/70">No markers confirmed yet</span>
+                  )}
+                </div>
+              </div>
+            )}
+            {hazardHotspots.length === 0 && (
               <button
                 type="button"
                 onClick={() => toggleHazard('none')}
-                className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition-all ${
+                aria-pressed={hazardsIdentified.includes('none')}
+                className={`flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition-all ${
                   hazardsIdentified.includes('none')
                     ? 'border-emerald-500 bg-emerald-500/10 text-foreground'
-                    : 'border-border text-muted-foreground hover:border-border/80 hover:bg-muted/40'
+                    : 'border-border text-muted-foreground hover:border-emerald-400 hover:bg-emerald-500/5'
                 }`}
               >
                 <CheckCircle2 className={`h-4 w-4 shrink-0 ${hazardsIdentified.includes('none') ? 'text-emerald-600 dark:text-emerald-400' : ''}`} />
-                <span>None identified</span>
+                <span>No obvious hazards after visual sweep</span>
               </button>
-            </div>
+            )}
 
-            <div className="pt-2 border-t border-border/40 space-y-3">
-              <p className="text-sm font-medium">Scene safety declaration</p>
+            <div className="rounded-2xl border border-border bg-muted/20 p-3 space-y-3">
+              <p className="text-sm font-semibold">Commit your scene safety decision</p>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   variant={sceneSafe === true ? 'default' : 'outline'}

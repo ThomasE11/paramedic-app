@@ -1,0 +1,33 @@
+import { test, expect } from '@playwright/test';
+
+async function openPilotHazardSweep(page: import('@playwright/test').Page) {
+  await page.addInitScript(() => {
+    window.localStorage.setItem('paramedic-studio-tour-completed', 'true');
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: /Start Training/i }).first().click();
+  await page.getByRole('button', { name: '4th Year', exact: true }).click();
+  await page.getByRole('button', { name: /Condition practice.*Search a diagnosis/i }).click();
+  await page.getByPlaceholder('STEMI, asthma, pneumothorax, anaphylaxis...').fill('Life-threatening asthma');
+  await page.getByRole('button', { name: /Life-threatening asthma.*1 case/i }).click();
+  await page.getByRole('button', { name: /Begin Scene Survey/i }).click();
+  await page.getByRole('button', { name: /^Next$/ }).click();
+  await expect(page.getByText('Scene Hazards & PPE', { exact: true })).toBeVisible();
+}
+
+test('clear scene keeps the photograph unobscured and requires a deliberate sweep', async ({ page }) => {
+  await openPilotHazardSweep(page);
+
+  const scene = page.getByText('Hazard scan', { exact: true }).locator('..');
+  await expect(scene.getByText('Patient', { exact: true })).toHaveCount(0);
+  await expect(scene.getByText('No obvious hazards visible', { exact: true })).toBeVisible();
+
+  const clearSweep = page.getByRole('button', { name: 'No obvious hazards after visual sweep' });
+  await expect(clearSweep).toHaveAttribute('aria-pressed', 'false');
+  await clearSweep.click();
+  await expect(clearSweep).toHaveAttribute('aria-pressed', 'true');
+
+  const decision = page.getByText('Commit your scene safety decision', { exact: true }).locator('..');
+  await expect(decision.getByRole('button', { name: /Scene is safe/i })).toBeVisible();
+  await expect(decision.getByRole('button', { name: /Scene is unsafe/i })).toBeVisible();
+});
