@@ -263,10 +263,44 @@ function ClinicalPatientSeat() {
   );
 }
 
-/** Scene-authored recumbent support. The top plane matches the stretcher
- * sheet at y=0.5025, so the fitted patient remains grounded while the scene
- * changes from a clinical trolley to the bed or sofa described at dispatch. */
-function ScenePatientSupport({ kind }: { kind: 'bed' | 'sofa' }) {
+/** Scene-authored patient support. Recumbent supports keep the stretcher's
+ * 0.5025 m top plane. A seated sofa uses the chair plant's 0.53 m seat height
+ * and faces across the patient's shoulders; the lengthwise recumbent version
+ * otherwise places an armrest through an upright patient's torso. */
+function ScenePatientSupport({ kind, seated = false }: { kind: 'bed' | 'sofa'; seated?: boolean }) {
+  if (kind === 'sofa' && seated) {
+    return (
+      <group name="scene-patient-support-sofa-seated" position={[0, 0, 0.32]}>
+        <mesh position={[0, 0.43, 0]} castShadow receiveShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[1.72, 0.20, 0.78]} />
+          <meshStandardMaterial color="#647052" roughness={0.96} />
+        </mesh>
+        <mesh position={[0, 0.78, -0.31]} castShadow raycast={NO_RAYCAST}>
+          <boxGeometry args={[1.72, 0.62, 0.16]} />
+          <meshStandardMaterial color="#566247" roughness={0.98} />
+        </mesh>
+        {[-0.82, 0.82].map(x => (
+          <mesh key={`seated-sofa-arm-${x}`} position={[x, 0.61, 0]} castShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.16, 0.38, 0.78]} />
+            <meshStandardMaterial color="#566247" roughness={0.98} />
+          </mesh>
+        ))}
+        {[-0.41, 0.41].map(x => (
+          <mesh key={`seated-sofa-cushion-${x}`} position={[x, 0.525, 0.03]} castShadow receiveShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.72, 0.05, 0.66]} />
+            <meshStandardMaterial color="#7a8568" roughness={0.98} />
+          </mesh>
+        ))}
+        {[-0.68, 0.68].flatMap(x => [-0.24, 0.24].map(z => (
+          <mesh key={`seated-sofa-leg-${x}-${z}`} position={[x, 0.16, z]} castShadow raycast={NO_RAYCAST}>
+            <boxGeometry args={[0.055, 0.32, 0.055]} />
+            <meshStandardMaterial color="#3f2f22" roughness={0.55} metalness={0.08} />
+          </mesh>
+        )))}
+      </group>
+    );
+  }
+
   if (kind === 'sofa') {
     return (
       <group name="scene-patient-support-sofa" position={[0, 0, 0.02]}>
@@ -687,7 +721,7 @@ export function TreatmentBayEnvironment({
           locations still need a support under a seated patient's pelvis. */}
       {showPatientSeat && (isClinic || variant === 'industrial' || variant === 'fire' || variant === 'water') && <ClinicalPatientSeat />}
       {(patientSupportSurface === 'bed' || patientSupportSurface === 'sofa') && (
-        <ScenePatientSupport kind={patientSupportSurface} />
+        <ScenePatientSupport kind={patientSupportSurface} seated={showPatientSeat} />
       )}
       {/* Medical equipment is brought by the paramedic in every scene, but the
           red crash cart and O2 tank belong inside a bay — hide them for
