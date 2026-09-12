@@ -31,6 +31,7 @@ import { injuryRegionTo3D, type BodyInjury } from '@/lib/injuryMap';
 import { LifeSigns } from './LifeSigns';
 import { createFaceAttachment } from './patientAttachments';
 import { createPatientPulseAnchors } from './patientPulseAnchors';
+import { createAssessmentContactSampler, type AssessmentContactFrame } from './assessmentContact';
 import { IdleAnimations, type IdleCues } from './IdleAnimations';
 import { getBreathPhase01, setBreathClock } from '@/lib/breathClock';
 import { computeIdleLimbMotion, createIdleLimbMotion } from '@/lib/idleLimbMotion';
@@ -70,11 +71,13 @@ export interface SurfaceSamplerOptions {
   anatomicalSite?: string;
 }
 
-export type SurfaceSampler = (
+export type SurfaceSampler = ((
   x: number,
   y: number,
   options?: SurfaceSamplerOptions,
-) => [number, number, number];
+) => [number, number, number]) & {
+  contact?: (x: number, y: number) => AssessmentContactFrame | null;
+};
 
 // Stage-parametric supine transform: same rotation/scale, different height.
 // 'stretcher' rests the patient's back on the mattress; 'floor' rests it on
@@ -841,7 +844,8 @@ function buildSurfaceSampler(root: THREE.Object3D | null, presentationRoot?: THR
   const s = H / AUTHOR_H; // overall scale factor (tolerances/offsets scale too)
   const PROUD = 0.03 * s; // lift the label just off the skin toward the camera
 
-  return (xInput: number, yInput: number, options?: SurfaceSamplerOptions): [number, number, number] => {
+  const contact = createAssessmentContactSampler(mesh as THREE.Mesh, [wx, wy, wz]);
+  const sampler: SurfaceSampler = (xInput: number, yInput: number, options?: SurfaceSamplerOptions): [number, number, number] => {
     const pulse = options?.anatomicalSite ? pulseAnchor(options.anatomicalSite) : null;
     if (pulse) return pulse;
     const useMeshSpace = options?.coordinateSpace === 'mesh';
@@ -869,6 +873,24 @@ function buildSurfaceSampler(root: THREE.Object3D | null, presentationRoot?: THR
     }
     return [projected.x, projected.y, projected.z];
   };
+  const contactDepths = new Map<string, number>();
+  sampler.contact = (xInput, yInput) => {
+    const x = cx + xInput * (halfW / AUTHOR_HALFW);
+    const y = minY + (yInput / AUTHOR_H) * H;
+    // Tight local anterior search, not the broad label window that can catch
+    // an adjacent shoulder or breast. The triangle supplies exact contact.
+    const key = `${xInput}:${yInput}`;
+    let z = contactDepths.get(key);
+    if (z === undefined) {
+      z = -Infinity;
+      for (let i = 0; i < N; i++) {
+        if (Math.abs(wx[i] - x) < .018 * s && Math.abs(wy[i] - y) < .018 * s) z = Math.max(z, wz[i]);
+      }
+      contactDepths.set(key, z);
+    }
+    return Number.isFinite(z) ? contact(x, y, z) : null;
+  };
+  return sampler;
 }
 
 /**

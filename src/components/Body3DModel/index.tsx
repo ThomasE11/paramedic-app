@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
 import { BodyMesh, getTreatmentBayTransform, treatmentBayClinicalToWorld, type BayPatientStage } from './BodyMesh';
+import { resolveAssessmentContact } from './assessmentContact';
 import { getBreathingPattern, liveBreathingDepth } from '@/lib/breathingPresentation';
 import { activeRespiratoryInterface, type OxygenVisualMode } from '@/lib/respiratoryEquipment';
 import {
@@ -464,6 +465,25 @@ const EXAM_LANDMARKS: ExamLandmark[] = [
   { id: 'pelvis-symphysis-detail', region: 'pelvis', label: 'Symphysis', sublabel: 'deformity, bruising', position: [0, 0.86, 0.21], level: 'detail', actionId: 'pelvis-inspect', tone: 'abdomen' },
 ];
 
+// Contact calibration for the resp-001 reference adult. Keep other patient
+// models unchanged until their anatomy has been visually calibrated as well.
+const RESP001_CONTACT_POSITIONS: Record<string, [number, number, number]> = {
+  'lung-ru': [-0.09, 1.42, 0.205],
+  'lung-rl': [-0.12, 1.31, 0.205],
+  'lung-lu': [0.09, 1.42, 0.205],
+  'lung-ll': [0.12, 1.31, 0.205],
+  'sternum-detail': [0, 1.37, 0.215],
+  'heart-detail': [0.06, 1.34, 0.215],
+  'ruq-detail': [-0.075, 1.205, 0.245],
+  'luq-detail': [0.075, 1.205, 0.245],
+  'rlq-detail': [-0.075, 1.095, 0.245],
+  'llq-detail': [0.075, 1.095, 0.245],
+  'umbilicus-detail': [0, 1.15, 0.255],
+};
+const RESP001_EXAM_LANDMARKS = EXAM_LANDMARKS.map(marker => ({
+  ...marker, position: RESP001_CONTACT_POSITIONS[marker.id] ?? marker.position,
+}));
+
 function SceneCable({
   points,
   color,
@@ -786,6 +806,116 @@ function MarkerHtml({
   );
 }
 
+const NO_TOOL_RAYCAST = () => {};
+
+function AssessmentContactTool({ action, region, sampler, patientScale, exposed }: {
+  action: string | null;
+  region: string | null;
+  sampler: SurfaceSampler | null;
+  patientScale: number;
+  exposed: boolean;
+}) {
+  const root = useRef<THREE.Group>(null);
+  const gesture = useRef<THREE.Group>(null);
+  const elapsed = useRef(0);
+  const [sequence, setSequence] = useState(0);
+  const contact = resolveAssessmentContact(action, region, RESP001_EXAM_LANDMARKS, sequence);
+  const vectors = useMemo(() => ({ normal: new THREE.Vector3(), z: new THREE.Vector3(0, 0, 1) }), []);
+  useEffect(() => {
+    elapsed.current = 0;
+    setSequence(0);
+    if (action !== 'chest-auscultate-lungs' && action !== 'chest-percuss') return;
+    const timer = window.setInterval(() => setSequence(value => (value + 1) % 4), 3000);
+    return () => window.clearInterval(timer);
+  }, [action]);
+  // Registered after the body animation; keep priority zero so the overlay
+  // never takes ownership of rendering when the composer is disabled.
+  useFrame((_, delta) => {
+    if (!root.current || !contact) return;
+    const frame = sampler?.contact?.(contact.position[0], contact.position[1]);
+    root.current.visible = !!frame;
+    if (!frame) return;
+    elapsed.current += Math.min(delta, .05);
+    vectors.normal.fromArray(frame.normal);
+    root.current.position.fromArray(frame.position).addScaledVector(vectors.normal, .002 * patientScale);
+    root.current.quaternion.setFromUnitVectors(vectors.z, vectors.normal);
+    root.current.userData.site = contact.label;
+    root.current.userData.technique = contact.technique;
+    if (gesture.current) {
+      const motion = contact.technique === 'percuss' ? Math.pow(Math.max(0, Math.sin(elapsed.current * 9)), 4) * .022
+        : contact.technique === 'palpate' ? (1 - Math.cos(elapsed.current * 2.5)) * .002 : 0;
+      gesture.current.position.z = motion;
+    }
+  });
+  if (!contact || !sampler?.contact) return null;
+  const title = contact.technique === 'auscultate' ? 'Stethoscope' : contact.technique === 'palpate' ? 'Palpation' : 'Percussion';
+  return (
+    <group ref={root} name="assessment-contact-tool" scale={patientScale}>
+      <mesh raycast={NO_TOOL_RAYCAST} visible={exposed}>
+        <ringGeometry args={[.024, .027, 40]} />
+        <meshBasicMaterial color="#67e8f9" transparent opacity={.75} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+      <group ref={gesture} visible={exposed}>
+        {contact.technique === 'auscultate' ? (
+          <group name="assessment-stethoscope">
+            <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, .006]} raycast={NO_TOOL_RAYCAST}>
+              <cylinderGeometry args={[.023, .023, .01, 40]} />
+              <meshStandardMaterial color="#cbd5e1" metalness={.75} roughness={.25} />
+            </mesh>
+            <mesh position={[0, 0, .012]} raycast={NO_TOOL_RAYCAST}>
+              <circleGeometry args={[.018, 40]} />
+              <meshStandardMaterial color="#334155" metalness={.25} roughness={.42} />
+            </mesh>
+            <mesh position={[0, -.032, .012]} raycast={NO_TOOL_RAYCAST}>
+              <capsuleGeometry args={[.004, .05, 4, 8]} />
+              <meshStandardMaterial color="#0f172a" roughness={.8} />
+            </mesh>
+          </group>
+        ) : contact.technique === 'percuss' ? (
+          <group name="assessment-percussion-fingers" position={[0, 0, .018]}>
+            {[-.006, .006].map(x => (
+              <mesh key={x} position={[x, -.015, .006]} rotation={[.8, 0, 0]} raycast={NO_TOOL_RAYCAST}>
+                <capsuleGeometry args={[.005, .026, 4, 8]} />
+                <meshStandardMaterial color="#60a5d6" roughness={.8} />
+              </mesh>
+            ))}
+          </group>
+        ) : (
+          <group name="assessment-gloved-hand" position={[0, -.025, .012]}>
+            <mesh scale={[.027, .034, .009]} raycast={NO_TOOL_RAYCAST}>
+              <sphereGeometry args={[1, 16, 12]} />
+              <meshStandardMaterial color="#60a5d6" roughness={.8} />
+            </mesh>
+            {[-.020, -.007, .007, .020].map((x, i) => (
+              <mesh key={x} position={[x, .038 - Math.abs(i - 1.5) * .005, 0]} raycast={NO_TOOL_RAYCAST}>
+                <capsuleGeometry args={[.006, .032 - Math.abs(i - 1.5) * .005, 4, 8]} />
+                <meshStandardMaterial color="#60a5d6" roughness={.8} />
+              </mesh>
+            ))}
+            <mesh position={[-.031, .002, .003]} rotation={[0, 0, -.65]} raycast={NO_TOOL_RAYCAST}>
+              <capsuleGeometry args={[.008, .022, 4, 8]} />
+              <meshStandardMaterial color="#60a5d6" roughness={.8} />
+            </mesh>
+          </group>
+        )}
+      </group>
+      {exposed && contact.technique === 'percuss' && (
+        <mesh name="assessment-percussion-contact-finger" position={[0, 0, .006]} rotation={[0, 0, Math.PI / 2]} raycast={NO_TOOL_RAYCAST}>
+          <capsuleGeometry args={[.006, .042, 4, 8]} />
+          <meshStandardMaterial color="#60a5d6" roughness={.8} />
+        </mesh>
+      )}
+      <Html position={[.06, .065, .04]} center occlude zIndexRange={[82, 0]} style={{ pointerEvents: 'none' }}>
+        <div data-testid="assessment-contact-label" className="whitespace-nowrap rounded-lg border border-cyan-200/50 bg-slate-950/95 px-2 py-1 text-[10px] text-white shadow-lg">
+          <span className="font-semibold text-cyan-200">{title}</span> · {contact.label}
+          {!exposed && <span className="block text-[9px] text-amber-200">Expose this region for skin contact</span>}
+          {contact.bilateral && <span className="block text-[9px] text-slate-300">Bilateral contact sequence</span>}
+        </div>
+      </Html>
+    </group>
+  );
+}
+
 function LandmarkMarkers({
   activeRegion,
   assessedRegions,
@@ -796,6 +926,8 @@ function LandmarkMarkers({
   sampler,
   presentation,
   patientScale = 1,
+  landmarks = EXAM_LANDMARKS,
+  useContactAnchors = false,
 }: {
   activeRegion: string | null;
   assessedRegions: Set<string>;
@@ -806,11 +938,13 @@ function LandmarkMarkers({
   sampler: SurfaceSampler | null;
   presentation: MarkerPresentation;
   patientScale?: number;
+  landmarks?: ExamLandmark[];
+  useContactAnchors?: boolean;
 }) {
   const compactPatient = patientScale < 0.55;
   const visibleMarkers = activeRegion
-    ? EXAM_LANDMARKS.filter(marker => marker.region === activeRegion && marker.level === 'detail')
-    : EXAM_LANDMARKS.filter(marker => marker.level === 'overview' && (
+    ? landmarks.filter(marker => marker.region === activeRegion && marker.level === 'detail')
+    : landmarks.filter(marker => marker.level === 'overview' && (
       requiredRegions.has(marker.region)
       || marker.id === 'eyes-overview'
       || marker.id === 'airway-overview'
@@ -846,7 +980,11 @@ function LandmarkMarkers({
         // 'posterior' lives on the back, which the front-facing sampler can't
         // resolve, so it keeps its authored anchor.
         const sampleMarkerPosition = sampler && marker.region !== 'posterior-logroll'
-          ? () => sampler(marker.position[0], marker.position[1], { coordinateSpace: marker.anchorSpace ?? 'author', anatomicalSite: marker.actionId })
+          ? () => {
+            const contact = useContactAnchors && (marker.region === 'chest' || marker.region === 'abdomen')
+              ? sampler.contact?.(marker.position[0], marker.position[1]) : null;
+            return contact?.position ?? sampler(marker.position[0], marker.position[1], { coordinateSpace: marker.anchorSpace ?? 'author', anatomicalSite: marker.actionId });
+          }
           : undefined;
         const pos: [number, number, number] = sampleMarkerPosition?.() ?? marker.position;
         const isDetail = marker.level === 'detail';
@@ -4658,6 +4796,7 @@ function PatientFirstExamDock({
   playingSound,
   soundProgress,
   onRequestTreat,
+  onTechniqueChange,
 }: {
   activeRegion: string;
   actions: ExamAction[];
@@ -4671,6 +4810,7 @@ function PatientFirstExamDock({
   playingSound: string | null;
   soundProgress: number;
   onRequestTreat?: (hint?: { reason?: string; managementTab?: string; search?: string }) => void;
+  onTechniqueChange?: () => void;
 }) {
   const grouped = TECHNIQUE_ORDER
     .map(technique => {
@@ -4762,7 +4902,7 @@ function PatientFirstExamDock({
                   type="button"
                   title={`${meta.label} — ${meta.hint}`}
                   aria-label={meta.label}
-                  onClick={() => setSelectedTechnique(group.technique)}
+                  onClick={() => { setSelectedTechnique(group.technique); onTechniqueChange?.(); }}
                   className={`patient-first-technique-button ${isActive ? dock.active : dock.tone}`}
                 >
                   <span className="flex w-full items-center justify-center">
@@ -5011,6 +5151,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   );
   const [revealedFindings, setRevealedFindings] = useState<Map<string, string>>(new Map());
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
+  const [contactAction, setContactAction] = useState<string | null>(null);
   const [patientReaction, setPatientReaction] = useState<PatientReaction | null>(null);
   // Regions the patient has already consented to exposing this case.
   const consentedRegionsRef = useRef<Set<string>>(new Set());
@@ -5661,6 +5802,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const handleExamAction = useCallback((actionId: string) => {
     if (!activeRegion) return;
     setSelectedAction(actionId);
+    setContactAction(actionId);
 
     if (controlsRef.current) {
       const focus: Record<string, { pos: [number, number, number]; target: [number, number, number] }> = {
@@ -6530,6 +6672,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               />
 
               {!bedsideConversation.active && <LandmarkMarkers
+                landmarks={caseData.id === 'resp-001' ? RESP001_EXAM_LANDMARKS : EXAM_LANDMARKS}
+                useContactAnchors={caseData.id === 'resp-001'}
                 activeRegion={activeRegion}
                 assessedRegions={assessedRegions}
                 requiredRegions={requiredRegions}
@@ -6540,6 +6684,16 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 presentation={markerPresentation}
                 patientScale={patientScale}
               />}
+
+              {caseData.id === 'resp-001' && !bedsideConversation.active && anatomyLayer !== 'skeleton' && (activeRegion === 'chest' || activeRegion === 'abdomen') && (
+                <AssessmentContactTool
+                  action={selectedAction === contactAction ? contactAction : null}
+                  region={activeRegion}
+                  sampler={surfaceSampler}
+                  patientScale={patientScale}
+                  exposed={anatomyLayer !== 'dressed' || regionExposed || (activeRegion === 'chest' && defibrillatorPadsAttached)}
+                />
+              )}
 
               {!useTreatmentBayPresentation && (
                 <>
@@ -6710,6 +6864,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               playingSound={playingSound}
               soundProgress={soundProgress}
               onRequestTreat={onRequestTreat}
+              onTechniqueChange={() => setContactAction(null)}
             />
           )}
 
