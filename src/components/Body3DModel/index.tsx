@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
 import { BodyMesh, getTreatmentBayTransform, treatmentBayClinicalToWorld, RESP001_SEATED_SUPPORT_LIFT, type BayPatientStage } from './BodyMesh';
-import { resolveAssessmentContact } from './assessmentContact';
+import { getPilotAuscultationSteps, resolveAssessmentContact, startAuscultationSequence } from './assessmentContact';
 import { createPalpationHandFit, PALPATION_FINGERS } from './palpationHandFit';
 import { hasPainfulPalpationFinding } from './palpationReaction';
 import { PilotIrisDetail, PupilLightExam, PupilLightControls } from './PupilLightExam';
@@ -819,12 +819,13 @@ function MarkerHtml({
 
 const NO_TOOL_RAYCAST = () => {};
 
-function AssessmentContactTool({ action, region, sampler, patientScale, exposed }: {
+function AssessmentContactTool({ action, region, sampler, patientScale, exposed, listeningStep }: {
   action: string | null;
   region: string | null;
   sampler: SurfaceSampler | null;
   patientScale: number;
   exposed: boolean;
+  listeningStep: number;
 }) {
   const root = useRef<THREE.Group>(null);
   const gesture = useRef<THREE.Group>(null);
@@ -832,12 +833,12 @@ function AssessmentContactTool({ action, region, sampler, patientScale, exposed 
   const fitHand = useMemo(() => createPalpationHandFit(), []);
   const elapsed = useRef(0);
   const [sequence, setSequence] = useState(0);
-  const contact = resolveAssessmentContact(action, region, RESP001_EXAM_LANDMARKS, sequence);
+  const contact = resolveAssessmentContact(action, region, RESP001_EXAM_LANDMARKS, action === 'chest-percuss' ? sequence : listeningStep);
   const vectors = useMemo(() => ({ normal: new THREE.Vector3(), z: new THREE.Vector3(0, 0, 1) }), []);
   useEffect(() => {
     elapsed.current = 0;
     setSequence(0);
-    if (action !== 'chest-auscultate-lungs' && action !== 'chest-percuss') return;
+    if (action !== 'chest-percuss') return;
     const timer = window.setInterval(() => setSequence(value => (value + 1) % 4), 3000);
     return () => window.clearInterval(timer);
   }, [action]);
@@ -873,7 +874,7 @@ function AssessmentContactTool({ action, region, sampler, patientScale, exposed 
       </mesh>
       <group ref={gesture} visible={exposed}>
         {contact.technique === 'auscultate' ? (
-          <group name="assessment-stethoscope">
+          <group name="assessment-stethoscope" position={[0, 0, -.0025]}>
             <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, .006]} raycast={NO_TOOL_RAYCAST}>
               <cylinderGeometry args={[.023, .023, .01, 40]} />
               <meshStandardMaterial color="#cbd5e1" metalness={.75} roughness={.25} />
@@ -926,6 +927,7 @@ function AssessmentContactTool({ action, region, sampler, patientScale, exposed 
           <span className="font-semibold text-cyan-200">{title}</span> · {contact.label}
           {!exposed && <span className="block text-[9px] text-amber-200">Expose this region for skin contact</span>}
           {contact.bilateral && <span className="block text-[9px] text-slate-300">Bilateral contact sequence</span>}
+          {action === 'chest-auscultate-lungs' && <span className="block text-[9px] text-slate-300">Anterior fields · also assess lateral/posterior fields</span>}
         </div>
       </Html>
     </group>
@@ -5238,6 +5240,22 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   const [playingSound, setPlayingSound] = useState<string | null>(null);
   const [soundProgress, setSoundProgress] = useState(0);
   const soundTimerRef = useRef<number | null>(null);
+  const [pilotListeningStep, setPilotListeningStep] = useState(0);
+  const pilotListeningCancel = useRef<(() => void) | null>(null);
+  const cancelPilotListening = useCallback(() => {
+    if (!pilotListeningCancel.current) return;
+    pilotListeningCancel.current();
+    pilotListeningCancel.current = null;
+    if (soundTimerRef.current !== null) cancelAnimationFrame(soundTimerRef.current);
+    soundTimerRef.current = null;
+    stopAllSounds();
+    setPlayingSound(null);
+    setSoundProgress(0);
+  }, []);
+  useEffect(() => () => cancelPilotListening(), [caseData.id, cancelPilotListening]);
+  useEffect(() => {
+    if (bedsideConversation.active || anatomyLayer === 'skeleton') cancelPilotListening();
+  }, [bedsideConversation.active, anatomyLayer, cancelPilotListening]);
   // Observe cues (Look / Listen / Feel) queue an exam action for the region
   // once handleRegionClick has finished opening the side rail.
   const pendingObserveActionRef = useRef<string | null>(null);
@@ -5669,6 +5687,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
 
   // Phase 2E: Consolidated close handler
   const handleCloseRegion = useCallback(() => {
+    cancelPilotListening();
     setActiveRegion(null);
     setShowLimbDropdown(false);
     setRegionExposed(false);
@@ -5691,7 +5710,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
         400,
       );
     }
-  }, [animateCamera, clearPatientReaction, overviewCameraFocus.pos, overviewCameraFocus.target]);
+  }, [animateCamera, clearPatientReaction, overviewCameraFocus.pos, overviewCameraFocus.target, cancelPilotListening]);
 
   const wasConversing = useRef(false);
   useEffect(() => {
@@ -5723,6 +5742,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
   }, [activeRegion, handleCloseRegion]);
 
   const handleRegionClick = useCallback((stepId: string) => {
+    cancelPilotListening();
     setActiveRegion(stepId);
     setRegionExposed(false);
     // Individual limb regions are directly the active limb
@@ -5840,27 +5860,28 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       const pos = fitCameraPos(controlsRef.current, target, dir, (REGION_RADIUS[stepId] ?? 0.28) * cameraScale);
       animateCamera(controlsRef.current, pos, target, 460);
     }
-  }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, bayStage, patientVoice, patientPosture, patientMobility, treatmentBayOverviewEnabled, patientScale, faceAttachment, seatedSupportLift]);
+  }, [onRegionClick, animateCamera, clearPatientReaction, anatomyLayer, bayStage, patientVoice, patientPosture, patientMobility, treatmentBayOverviewEnabled, patientScale, faceAttachment, seatedSupportLift, cancelPilotListening]);
 
   // Phase 2F: Sound progress animation
-  const startSoundProgress = useCallback((actionId: string, durationMs: number) => {
+  const startSoundProgress = useCallback((actionId: string, durationMs: number, from = 0, to = 1, finishOnElapsed = true) => {
     // Cancel previous
     if (soundTimerRef.current !== null) {
       cancelAnimationFrame(soundTimerRef.current);
     }
     setPlayingSound(actionId);
-    setSoundProgress(0);
+    setSoundProgress(from);
     const startTime = performance.now();
 
     const tick = (now: number) => {
       const elapsed = now - startTime;
-      const progress = Math.min(elapsed / durationMs, 1);
-      setSoundProgress(progress);
+      const progress = Math.min(Math.max(0, elapsed / durationMs), 1);
+      const displayed = !finishOnElapsed && to === 1 ? Math.min(progress, .999) : progress;
+      setSoundProgress(from + (to - from) * displayed);
       if (progress < 1) {
         soundTimerRef.current = requestAnimationFrame(tick);
       } else {
         soundTimerRef.current = null;
-        setPlayingSound(null);
+        if (to === 1 && finishOnElapsed) setPlayingSound(null);
       }
     };
     soundTimerRef.current = requestAnimationFrame(tick);
@@ -5868,6 +5889,8 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
 
   const handleExamAction = useCallback((actionId: string) => {
     if (!activeRegion) return;
+    cancelPilotListening();
+    setPilotListeningStep(0);
     setSelectedAction(actionId);
     setContactAction(actionId);
 
@@ -6004,7 +6027,25 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
     // Play sounds for auscultation actions
     if (actionId.includes('auscultate')) {
       stopAllSounds();
-      if (actionId === 'chest-auscultate-lungs' && patientSounds) {
+      const pilotSteps = caseData.id === 'resp-001' ? getPilotAuscultationSteps(actionId, RESP001_EXAM_LANDMARKS, breathRateRpm) : [];
+      if (pilotSteps.length && patientSounds) {
+        pilotListeningCancel.current = startAuscultationSequence(pilotSteps, (step, index) => {
+          setPilotListeningStep(index);
+          // A delayed/backgrounded step cannot let the overall bar finish
+          // ahead of the actual listening tour. Each step owns its segment.
+          startSoundProgress(actionId, step.durationMs, index / pilotSteps.length, (index + 1) / pilotSteps.length, false);
+          if (step.sound === 'heart') playHeartSound(patientSounds.heartSound, step.durationMs);
+          else playBreathSound(step.sound === 'right' ? patientSounds.rightLung : step.sound === 'left' ? patientSounds.leftLung
+            : getZoneBreathSound(patientSounds, step.sound), step.durationMs);
+        }, () => {
+          pilotListeningCancel.current = null;
+          stopAllSounds();
+          if (soundTimerRef.current !== null) cancelAnimationFrame(soundTimerRef.current);
+          soundTimerRef.current = null;
+          setSoundProgress(1);
+          setPlayingSound(null);
+        });
+      } else if (actionId === 'chest-auscultate-lungs' && patientSounds) {
         // Play left lung (3s), then right lung (3s) — bilateral auscultation
         playBreathSound(patientSounds.leftLung, 3000);
         setTimeout(() => {
@@ -6066,7 +6107,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
       playPercussionSound(percType);
       startSoundProgress(actionId, PERCUSSION_DURATION);
     }
-  }, [activeRegion, animateCamera, appliedTreatmentIds, bayStage, caseData, effectiveVitals, patientMobility, patientPosture, patientScale, patientSounds, patientVoice, revealedFindings, startSoundProgress, isInArrest, surfaceSampler, treatmentBayOverviewEnabled, faceAttachment, seatedSupportLift]);
+  }, [activeRegion, animateCamera, appliedTreatmentIds, bayStage, caseData, effectiveVitals, patientMobility, patientPosture, patientScale, patientSounds, patientVoice, revealedFindings, startSoundProgress, isInArrest, surfaceSampler, treatmentBayOverviewEnabled, faceAttachment, seatedSupportLift, cancelPilotListening, breathRateRpm]);
   const handleExamActionRef = useRef(handleExamAction);
   handleExamActionRef.current = handleExamAction;
 
@@ -6783,6 +6824,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                   region={activeRegion}
                   sampler={surfaceSampler}
                   patientScale={patientScale}
+                  listeningStep={pilotListeningStep}
                   exposed={anatomyLayer !== 'dressed' || regionExposed || (activeRegion === 'chest' && defibrillatorPadsAttached)}
                 />
               )}
@@ -6959,7 +7001,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
               playingSound={playingSound}
               soundProgress={soundProgress}
               onRequestTreat={onRequestTreat}
-              onTechniqueChange={() => setContactAction(null)}
+              onTechniqueChange={() => { cancelPilotListening(); setContactAction(null); }}
             />
           )}
 
