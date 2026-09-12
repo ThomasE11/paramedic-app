@@ -53,8 +53,40 @@ function irisTexture() {
   return texture;
 }
 
+/** Iris appearance belongs to the patient, not to the examination tool. The
+ * committed face attachment also makes this effect follow a rebuilt clone,
+ * rather than running before the asynchronous patient model has loaded. */
+export function PilotIrisDetail({ attachment }: { attachment: THREE.Group }) {
+  const scene = useThree(state => state.scene);
+  useEffect(() => {
+    const texture = irisTexture();
+    const replacements: Array<{ mesh: THREE.Mesh; material: THREE.Material | THREE.Material[]; replacement: THREE.Material; geometry: THREE.BufferGeometry; detailedGeometry: THREE.BufferGeometry }> = [];
+    for (const name of ['irisL', 'irisR']) {
+      const mesh = scene.getObjectByName(name) as THREE.Mesh | undefined;
+      if (!mesh?.isMesh) continue;
+      const replacement = new THREE.MeshPhysicalMaterial({ color: '#ffffff', map: texture,
+        roughness: .4, clearcoat: .8, clearcoatRoughness: .1 });
+      replacement.userData.skipRecolor = true;
+      const detailedGeometry = withIrisSurfaceUv(mesh.geometry);
+      replacements.push({ mesh, material: mesh.material, replacement, geometry: mesh.geometry, detailedGeometry });
+      mesh.geometry = detailedGeometry;
+      mesh.material = replacement;
+    }
+    return () => {
+      for (const { mesh, material, replacement, geometry, detailedGeometry } of replacements) {
+        if (mesh.material === replacement) mesh.material = material;
+        if (mesh.geometry === detailedGeometry) mesh.geometry = geometry;
+        replacement.dispose(); detailedGeometry.dispose();
+      }
+      texture.dispose();
+    };
+  }, [scene, attachment]);
+  return null;
+}
+
 /** Mounted only in the pilot's eye exam. Uses the existing eye nodes, not a
- * separate cartoon face. Materials and baseline pupil sizes restore on exit. */
+ * separate cartoon face. Penlight highlights and pupil sizes restore on exit;
+ * the patient's detailed irises persist independently of the tool. */
 export function PupilLightExam({ side, profile }: { side: LightSide; profile: PupilProfile }) {
   const scene = useThree(state => state.scene);
   const penlight = useRef<THREE.Group>(null);
@@ -64,28 +96,23 @@ export function PupilLightExam({ side, profile }: { side: LightSide; profile: Pu
   const sizes = useRef<[number, number]>([profile.leftMm, profile.rightMm]);
   const vectors = useMemo(() => ({ position: new THREE.Vector3(), normal: new THREE.Vector3(), offset: new THREE.Vector3(), rotation: new THREE.Quaternion() }), []);
   useEffect(() => {
-    const texture = irisTexture();
-    const replacements: Array<{ mesh: THREE.Mesh; material: THREE.Material | THREE.Material[]; replacement: THREE.Material; geometry: THREE.BufferGeometry }> = [];
-    for (const name of ['irisL', 'irisR', 'eyeL', 'eyeR', 'pupilL', 'pupilR']) {
+    const replacements: Array<{ mesh: THREE.Mesh; material: THREE.Material | THREE.Material[]; replacement: THREE.Material }> = [];
+    for (const name of ['eyeL', 'eyeR', 'pupilL', 'pupilR']) {
       const mesh = scene.getObjectByName(name) as THREE.Mesh | undefined;
       if (!mesh?.isMesh) continue;
       const replacement = new THREE.MeshPhysicalMaterial({
-        color: name.startsWith('pupil') ? '#020202' : name.startsWith('iris') ? '#ffffff' : '#e8e3d8',
-        map: name.startsWith('iris') ? texture : null,
-        roughness: name.startsWith('pupil') ? .3 : name.startsWith('iris') ? .4 : .25,
+        color: name.startsWith('pupil') ? '#020202' : '#e8e3d8',
+        roughness: name.startsWith('pupil') ? .3 : .25,
         clearcoat: .8, clearcoatRoughness: .1,
       });
       replacement.userData.skipRecolor = true;
-      replacements.push({ mesh, material: mesh.material, replacement, geometry: mesh.geometry });
-      if (name.startsWith('iris')) mesh.geometry = withIrisSurfaceUv(mesh.geometry);
+      replacements.push({ mesh, material: mesh.material, replacement });
       mesh.material = replacement;
     }
     return () => {
-      for (const { mesh, material, replacement, geometry } of replacements) {
+      for (const { mesh, material, replacement } of replacements) {
         mesh.material = material; replacement.dispose();
-        if (mesh.geometry !== geometry) { mesh.geometry.dispose(); mesh.geometry = geometry; }
       }
-      texture.dispose();
       scene.getObjectByName('pupilL')?.scale.setScalar(Math.min(1.8, Math.max(.4, profile.leftMm / 5)));
       scene.getObjectByName('pupilR')?.scale.setScalar(Math.min(1.8, Math.max(.4, profile.rightMm / 5)));
     };

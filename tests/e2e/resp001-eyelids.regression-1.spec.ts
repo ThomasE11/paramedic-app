@@ -19,6 +19,7 @@ test('pilot blinks with physical lids while retaining the eyes behind them', asy
     const target=lids.morphTargetDictionary!.eyelids_closed;
     const samples: Array<{time:number,closure:number,eyesVisible:boolean}>=[];
     const captures: Record<string,string>={};
+    const mountedFrames: Record<string,unknown>={};
     const coverage: Record<string,{closure:number,covered:number,total:number,rays:Array<{eye:string,x:number,y:number,covered:boolean,faceOccluded:boolean,irisHit:boolean}>}>={};
     const start=performance.now();
     await new Promise<void>(resolve => {
@@ -30,6 +31,9 @@ test('pilot blinks with physical lids while retaining the eyes behind them', asy
         const label=closure>=1-1e-8?'closed':closure>.3&&closure<.7?'partial':closure<.01?'open':null;
         if(label&&!captures[label]) {
           state.gl.render(state.scene,state.camera);
+          const mountedLids=state.scene.getObjectByName('PilotEyelids') as THREE.SkinnedMesh;
+          mountedFrames[label]={sameLids:mountedLids===lids,sameBody:state.scene.getObjectByName('Patient')===body,
+            before:closure,after:lids.morphTargetInfluences![target],mountedClosure:mountedLids.morphTargetInfluences![mountedLids.morphTargetDictionary!.eyelids_closed]};
           captures[label]=state.gl.domElement.toDataURL('image/png');
           // Three caches SkinnedMesh bounds; refresh after pose/morph changes
           // or a valid ray can be rejected against the old neutral-pose sphere.
@@ -77,7 +81,7 @@ test('pilot blinks with physical lids while retaining the eyes behind them', asy
       minUvArea=Math.min(minUvArea,Math.abs((uv.getX(b)-uv.getX(a))*(uv.getY(c)-uv.getY(a))
         -(uv.getY(b)-uv.getY(a))*(uv.getX(c)-uv.getX(a)))*.5);
     }
-    return {samples,captures,coverage,morphSyncError,minUvArea,skinned:lids.isSkinnedMesh,sameSkeleton:lids.skeleton===body.skeleton,
+    return {samples,captures,coverage,mountedFrames,morphSyncError,minUvArea,skinned:lids.isSkinnedMesh,sameSkeleton:lids.skeleton===body.skeleton,
       vertices:lids.geometry.getAttribute('position').count,
       morphs:Object.keys(lids.morphTargetDictionary!),bodyMorphs:Object.keys(body.morphTargetDictionary!)};
   });

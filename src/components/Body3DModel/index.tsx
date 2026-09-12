@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { RotateCcw, User, Eye, Hand, Activity, Stethoscope, X, ChevronRight, ChevronDown, AlertTriangle, Compass, Unlock, Wind, Shirt } from 'lucide-react';
 import { BodyMesh, getTreatmentBayTransform, treatmentBayClinicalToWorld, RESP001_SEATED_SUPPORT_LIFT, type BayPatientStage } from './BodyMesh';
 import { resolveAssessmentContact } from './assessmentContact';
-import { PupilLightExam, PupilLightControls } from './PupilLightExam';
+import { PilotIrisDetail, PupilLightExam, PupilLightControls } from './PupilLightExam';
 import { getBreathingPattern, liveBreathingDepth } from '@/lib/breathingPresentation';
 import { activeRespiratoryInterface, type OxygenVisualMode } from '@/lib/respiratoryEquipment';
 import {
@@ -6714,6 +6714,7 @@ export function Body3DModel({ onRegionClick, assessedRegions, caseData, patientS
                 patientScale={patientScale}
               />
 
+              {caseData.id === 'resp-001' && faceAttachment && <PilotIrisDetail attachment={faceAttachment} />}
               {caseData.id === 'resp-001' && showEyeContext && !bedsideConversation.active && (
                 <PupilLightExam side={pupilLightSide} profile={pupilProfile} />
               )}

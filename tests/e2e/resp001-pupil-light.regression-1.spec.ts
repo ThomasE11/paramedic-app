@@ -33,6 +33,10 @@ test('pilot penlight drives direct and consensual pupils on the patient, then re
   await page.addInitScript(() => localStorage.setItem('paramedic-studio-voice-enabled', 'false'));
   await page.goto('/?devLiveCase=resp-001');
   await expect.poll(() => renderedSceneFraction(page), { timeout: 30_000 }).toBeGreaterThan(.25);
+  // Persistent iris detail initializes when the committed face attachment is
+  // published. Capture its ready geometry, not the GLB's first loading frame.
+  await expect.poll(() => page.evaluate(() => !!((window.__r3f!.get().scene.getObjectByName('irisL') as import('three').Mesh)
+    .material as import('three').MeshPhysicalMaterial).map)).toBe(true);
   const originalIrisGeometry = await page.evaluate(() => (window.__r3f!.get().scene.getObjectByName('irisL') as import('three').Mesh).geometry.uuid);
   await page.getByRole('button', { name: 'Examine Face', exact: true }).click();
   await page.locator('.patient-first-exam-dock').getByRole('button', { name: /Pupil Reactivity/ }).click();
