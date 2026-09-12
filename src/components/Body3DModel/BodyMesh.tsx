@@ -38,6 +38,7 @@ import { computeIdleLimbMotion, createIdleLimbMotion } from '@/lib/idleLimbMotio
 import { patientWalkingPath } from '@/lib/patientWalkingPath';
 import { tripodHandBraceSweep, TRIPOD_BRACE_CALIBRATION } from '@/lib/tripodHandBrace';
 import { skinDetailProfileForPilot, type SkinDetailProfile } from './resp001SkinDetail';
+import { withResp001LipArticulationMorph } from './resp001LipArticulation';
 import {
   patientSkeletalAction,
   patientArmRestRadians,
@@ -1004,6 +1005,17 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     clone.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
+        // The reference pilot shares its gate with the tripod/skin refinement.
+        // Replace the malformed mouth delta locally; never mutate the GLTF cache.
+        if (pilotGarment && mesh.name === 'Patient') {
+          const influences = mesh.morphTargetInfluences?.slice();
+          const dictionary = mesh.morphTargetDictionary;
+          mesh.geometry = withResp001LipArticulationMorph(mesh.geometry, dictionary?.viseme_open);
+          mesh.updateMorphTargets();
+          mesh.morphTargetDictionary = dictionary;
+          if (influences) mesh.morphTargetInfluences = influences;
+          mesh.userData.ownsLipGeometry = true;
+        }
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         const meshName = mesh.name.toLowerCase();
@@ -1264,7 +1276,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
     // scrubs + 2048² eye texture repaint). Opacity is applied live by the
     // effect below; the eyes are baked once (live pupil reading is the 2D panel).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, modelPath, bodyInjuries, garmentScenes, garmentSpecs, mobility, patientHeight, patientGender, patientAge]); // bodyInjuries: stable per case (memoised upstream + per-case key)
+  }, [scene, modelPath, bodyInjuries, garmentScenes, garmentSpecs, mobility, patientHeight, patientGender, patientAge, pilotGarment]); // bodyInjuries: stable per case (memoised upstream + per-case key)
 
   const standingArmBones = useMemo(() => (
     ['mixamorig:LeftArm', 'mixamorig:RightArm']
@@ -1545,7 +1557,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
         const m = o as THREE.Mesh;
         if (!m.isMesh) return;
         const created = m.userData?.skipRecolor === true || m.name.startsWith('hit-');
-        if (created && m.geometry) m.geometry.dispose();
+        if ((created || m.userData.ownsLipGeometry) && m.geometry) m.geometry.dispose();
         const mats = Array.isArray(m.material) ? m.material : m.material ? [m.material] : [];
         for (const mat of mats) {
           const map = (mat as THREE.MeshStandardMaterial).map;
