@@ -3,6 +3,9 @@
  */
 
 import * as THREE from 'three';
+import {
+  collectContinuousLipUvTriangles,
+} from './lipCyanosisMask';
 
 export interface MottleTwin {
   /** Mottled copy of the eyes-open diffuse atlas. */
@@ -177,6 +180,7 @@ export function buildCyanosisLocalTwin(
   strength = 1,
   sourceOpen?: THREE.CanvasTexture,
   sourceClosed?: THREE.CanvasTexture | null,
+  continuousLipMask = false,
 ): CyanosisLocalTwin | null {
   try {
     const openTex = sourceOpen ?? (body.userData?.eyesOpenTex as THREE.CanvasTexture | undefined);
@@ -204,6 +208,9 @@ export function buildCyanosisLocalTwin(
     const v = new THREE.Vector3();
     const blotches: Blotch[] = [];
     const nailKeys = new Set<string>();
+    const lipTriangles = continuousLipMask
+      ? collectContinuousLipUvTriangles(pos, uv, geom.index)
+      : [];
     const step = Math.max(1, Math.floor(pos.count / 4000));
     for (let i = 0; i < pos.count; i++) {
       v.fromBufferAttribute(pos, i);
@@ -212,6 +219,7 @@ export function buildCyanosisLocalTwin(
       const isLip = isCyanoticLipVertex(v.x, v.y, v.z);
       const isNail = !isLip && isCyanoticNailVertex(v.x, v.y, v.z);
       if (!isLip && !isNail) continue;
+      if (isLip && continuousLipMask) continue;
       const u = uv.getX(i);
       const vv = uv.getY(i);
       // Nail-plate only: high-V distal UV + dorsal-facing normal.z.
@@ -237,7 +245,7 @@ export function buildCyanosisLocalTwin(
       const r = Math.max(3, appearance.radiusScale * tw);
       blotches.push({ x: px, y: py, r, alpha: appearance.alpha });
     }
-    if (blotches.length === 0) return null;
+    if (blotches.length === 0 && lipTriangles.length === 0) return null;
 
     const adopt = (t: THREE.CanvasTexture) => {
       t.flipY = openTex.flipY;
@@ -257,6 +265,26 @@ export function buildCyanosisLocalTwin(
       const ctx = canvas.getContext('2d');
       if (!ctx) return null;
       ctx.drawImage(src, 0, 0, tw, th);
+      if (lipTriangles.length > 0) {
+        const appearance = getCyanosisBlotchAppearance('lip', strength);
+        const cyan = appearance.alpha > 0.5 ? '72, 84, 116' : '88, 102, 132';
+        // source-atop retains the atlas's original transparency. The partial
+        // alpha leaves pores and authored lip colour visible beneath the tint.
+        ctx.globalCompositeOperation = 'source-atop';
+        for (const triangle of lipTriangles) {
+          const [a, b, c] = triangle.points.map(([u, vv]) => [
+            u * tw,
+            (flipY ? 1 - vv : vv) * th,
+          ]);
+          ctx.fillStyle = `rgba(${cyan}, ${appearance.alpha * triangle.coverage})`;
+          ctx.beginPath();
+          ctx.moveTo(a[0], a[1]);
+          ctx.lineTo(b[0], b[1]);
+          ctx.lineTo(c[0], c[1]);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
       // Central cyanosis tints lips/nailbeds toward a dusky blue-grey while
       // preserving skin tone texturing. Multiply crushes the tan lip texels
       // to near-black; source-over desaturates toward clinical cyanosis.

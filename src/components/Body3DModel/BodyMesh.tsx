@@ -1966,7 +1966,7 @@ export function BodyMesh({ assessedRegions, onRegionClick, requiredRegions, guid
               bodyMesh.userData.cyanosisBaseOpenTex = baseOpen ?? null;
               bodyMesh.userData.cyanosisBaseClosedTex = baseClosed;
             }
-            const twin = buildCyanosisLocalTwin(bodyMesh, nextLevel / 4, baseOpen, baseClosed);
+            const twin = buildCyanosisLocalTwin(bodyMesh, nextLevel / 4, baseOpen, baseClosed, braceHandsOnKnees);
             if (twin) {
               const previousOpen = bodyMesh.userData.cyanosisOpenTex as THREE.Texture | undefined;
               const previousClosed = bodyMesh.userData.cyanosisClosedTex as THREE.Texture | null | undefined;
