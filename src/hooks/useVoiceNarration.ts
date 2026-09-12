@@ -165,6 +165,7 @@ interface VoicePlaybackState {
 
 let globalVoiceSessionId = 0;
 let globalActiveAudio: HTMLAudioElement | null = null;
+let globalCancelAudioCompletion: (() => void) | null = null;
 let globalQueueTimers: number[] = [];
 let globalIsSpeaking = false;
 let globalSyntheticMouthActive = false;
@@ -212,13 +213,24 @@ function clearGlobalQueueTimers(): void {
   globalQueueTimers = [];
 }
 
-function stopActiveAudio(): void {
-  if (!globalActiveAudio) return;
-  const audio = globalActiveAudio;
-  globalActiveAudio = null;
+function releaseAudio(audio: HTMLAudioElement): void {
+  audio.onended = null;
+  audio.onerror = null;
   try { audio.pause(); } catch { /* ignore */ }
   try { audio.currentTime = 0; } catch { /* ignore */ }
+  try { elementSources.get(audio)?.disconnect(); } catch { /* ignore */ }
   try { if (audio.src.startsWith('blob:')) URL.revokeObjectURL(audio.src); } catch { /* ignore */ }
+}
+
+function stopActiveAudio(): void {
+  const audio = globalActiveAudio;
+  globalActiveAudio = null;
+  // Pausing does not dispatch ended/error. Settle the local queue explicitly
+  // so an interrupted answer can release its prefetched clip and finish.
+  const cancelCompletion = globalCancelAudioCompletion;
+  globalCancelAudioCompletion = null;
+  cancelCompletion?.();
+  if (audio) releaseAudio(audio);
 }
 
 function stopCurrentPlayback(): void {
@@ -893,49 +905,78 @@ export function useVoiceNarration() {
     // is effectively unusable for this utterance → allow Web Speech fallback.
     let current = await synthSentence(sentences[0], role, patientVoice);
     if (!current) return false;
-    if (!isCurrentNarrationSession(mySession)) return true;
+    if (!isCurrentNarrationSession(mySession)) {
+      releaseAudio(current);
+      return true;
+    }
 
     // Drive the queue with one-ahead prefetch.
     (async () => {
       for (let i = 0; i < sentences.length; i++) {
-        if (!isCurrentNarrationSession(mySession)) return;
+        if (!isCurrentNarrationSession(mySession)) {
+          if (current) releaseAudio(current);
+          return;
+        }
         const audio = current!;
         // Kick off synth of the NEXT sentence while this one plays.
         const nextPromise = i + 1 < sentences.length
-          ? synthSentence(sentences[i + 1], role, patientVoice)
+          ? synthSentence(sentences[i + 1], role, patientVoice).then(next => {
+            if (next && !isCurrentNarrationSession(mySession)) {
+              releaseAudio(next);
+              return null;
+            }
+            return next;
+          })
           : Promise.resolve(null);
 
         setActiveAudio(audio);
-        const completion = new Promise<'ended' | 'error'>((resolve) => {
+        const completion = new Promise<'ended' | 'error' | 'cancelled'>((resolve) => {
           let settled = false;
-          const done = (outcome: 'ended' | 'error') => {
+          const done = (outcome: 'ended' | 'error' | 'cancelled') => {
             if (settled) return;
             settled = true;
             resolve(outcome);
           };
           audio.onended = () => done('ended');
           audio.onerror = () => done('error');
+          globalCancelAudioCompletion = () => done('cancelled');
         });
 
         const playResult = await playAudioWithRetry(
           audio,
           () => isCurrentNarrationSession(mySession),
         );
-        if (playResult === 'cancelled') return;
+        if (playResult === 'cancelled') {
+          const next = await nextPromise;
+          if (next) releaseAudio(next);
+          return;
+        }
         if (playResult === 'error') {
-          try { URL.revokeObjectURL(audio.src); } catch { /* ignore */ }
+          globalCancelAudioCompletion = null;
+          releaseAudio(audio);
           if (globalActiveAudio === audio) globalActiveAudio = null;
           setCurrentPlaybackStatus(mySession, 'error');
+          const next = await nextPromise;
+          if (next) releaseAudio(next);
           return;
         }
         setCurrentPlaybackStatus(mySession, 'speaking');
         const completionResult = await completion;
-        try { URL.revokeObjectURL(audio.src); } catch { /* ignore */ }
-        if (globalActiveAudio === audio) globalActiveAudio = null;
+        if (globalActiveAudio === audio) {
+          globalActiveAudio = null;
+          globalCancelAudioCompletion = null;
+          releaseAudio(audio);
+        }
 
-        if (!isCurrentNarrationSession(mySession)) return;
+        if (!isCurrentNarrationSession(mySession)) {
+          const next = await nextPromise;
+          if (next) releaseAudio(next);
+          return;
+        }
         if (completionResult === 'error') {
           setCurrentPlaybackStatus(mySession, 'error');
+          const next = await nextPromise;
+          if (next) releaseAudio(next);
           return;
         }
         if (i + 1 < sentences.length) setCurrentPlaybackStatus(mySession, 'loading');
@@ -1064,7 +1105,7 @@ export function useVoiceNarration() {
       if (!isCurrentNarrationSession(mySession)) return;
       if (finished) return;
       finished = true;
-      try { URL.revokeObjectURL(audio.src); } catch { /* ignore */ }
+      releaseAudio(audio);
       if (globalActiveAudio === audio) globalActiveAudio = null;
       setCurrentPlaybackStatus(mySession, status);
       if (status === 'idle') onEnd?.();
