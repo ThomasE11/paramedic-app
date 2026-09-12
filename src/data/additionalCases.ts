@@ -40,7 +40,9 @@ export const additionalRespiratoryCases: CaseScenario[] = [
       description: 'Bedroom, patient sitting upright on edge of bed',
       hazards: ['Oxygen concentrator present'],
       bystanders: 'Wife distressed',
-      environment: 'Warm, poorly ventilated room'
+      environment: 'Warm, poorly ventilated room',
+      sceneImagePath: '/scene-assets/home-medical-male-dubai-apartment.png',
+      sceneImageCaption: 'Scene — Bedroom, elderly male COPD patient sitting upright'
     },
     initialPresentation: {
       generalImpression: 'Elderly male, tripod position, using accessory muscles',
